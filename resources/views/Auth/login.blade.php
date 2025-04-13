@@ -1,47 +1,45 @@
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
-
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
-
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
-
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Entrar - Grocery Club</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url('https://images.unsplash.com/photo-1606788075761-1ec2ef302b25?auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            font-family: 'Georgia', serif;
+        }
+        .overlay {
+            background-color: rgba(44, 30, 18, 0.85);
+        }
+        .btn-rustic {
+            background-color: #a47148;
+            border: 1px solid #5c3b1e;
+        }
+        .btn-rustic:hover {
+            background-color: #8a5e3b;
+        }
+    </style>
+</head>
+<body class="overlay min-h-screen flex items-center justify-center">
+    <div class="bg-white bg-opacity-95 p-8 rounded-xl shadow-xl max-w-md w-full text-gray-800">
+        <h2 class="text-3xl font-bold mb-6 text-center">Entrar no Grocery Club</h2>
+        <form method="POST" action="{{ route('login') }}">
+            @csrf
+            <div class="mb-4">
+                <label class="block text-sm font-semibold mb-1" for="email">Email</label>
+                <input type="email" name="email" id="email" required class="w-full px-4 py-2 border rounded bg-white text-gray-800" />
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold mb-1" for="password">Palavra-passe</label>
+                <input type="password" name="password" id="password" required class="w-full px-4 py-2 border rounded bg-white text-gray-800" />
+            </div>
+            <button type="submit" class="btn-rustic w-full text-white py-2 rounded text-lg">Entrar</button>
+        </form>
+        <p class="mt-6 text-sm text-center">Ainda não tens conta? <a href="{{ route('register') }}" class="text-blue-600 hover:underline">Regista-te</a></p>
+    </div>
+</body>
+</html>

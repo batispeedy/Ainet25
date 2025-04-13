@@ -2,59 +2,114 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Operation;
+use App\Models\Order;
+use App\Models\Card;
+use App\Models\User;
+use App\Services\Payment;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
-    public function edit(Request $request): View
+    public function edit()
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
+        /** @var User $user */
+        $user = Auth::user();
+
+        $transactions = Operation::where('user_id', $user->id)->latest()->get();
+        $orders = Order::where('user_id', $user->id)->latest()->get();
+        $card = Card::find($user->id); // ou $user->card se a relação estiver configurada
+
+        return view('profile.edit', compact('transactions', 'orders', 'card'));
     }
 
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request)
     {
-        $request->user()->fill($request->validated());
+        /** @var User $user */
+        $user = Auth::user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'nif' => 'nullable|string|max:20',
+            'default_delivery_address' => 'nullable|string|max:255',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $user->name = $request->name;
+        $user->nif = $request->nif;
+        $user->default_delivery_address = $request->default_delivery_address;
+
+        if ($request->hasFile('photo')) {
+            $filename = 'user_' . $user->id . '.' . $request->photo->extension();
+            $request->photo->storeAs('public/users', $filename);
+            $user->photo = $filename;
         }
 
-        $request->user()->save();
+        $user->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return back()->with('success', 'Perfil atualizado com sucesso.');
     }
 
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
+    public function updatePassword(Request $request)
     {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
+        /** @var User $user */
+        $user = Auth::user();
+
+        $request->validate([
+            'password' => 'required|string|confirmed|min:8',
         ]);
 
-        $user = $request->user();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return back()->with('success', 'Palavra-passe alterada com sucesso!');
+    }
+
+    public function destroy(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
 
         Auth::logout();
+        $user->delete(); // soft delete (porque o modelo usa SoftDeletes)
 
-        $user->delete();
+        return redirect('/')->with('success', 'Conta eliminada com sucesso.');
+    }
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+    public function topup(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
 
-        return Redirect::to('/');
+        $request->validate([
+            'value' => 'required|numeric|min:1',
+            'payment_type' => 'required|in:Visa,PayPal,MBWAY',
+        ]);
+
+        $success = Payment::simulate($request->payment_type);
+
+        if (!$success) {
+            return back()->with('error', 'Pagamento falhou. Verifica os dados e tenta novamente.');
+        }
+
+        $card = Card::find($user->id);
+        if (!$card) {
+            return back()->with('error', 'Cartão virtual não encontrado.');
+        }
+
+        $card->balance += $request->value;
+        $card->save();
+
+        Operation::create([
+            'user_id' => $user->id,
+            'type' => 'topup',
+            'value' => $request->value,
+            'payment_type' => $request->payment_type,
+        ]);
+
+        return back()->with('success', 'Saldo carregado com sucesso!');
     }
 }

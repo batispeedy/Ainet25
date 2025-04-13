@@ -36,8 +36,23 @@ class User extends Authenticatable implements MustVerifyEmail
         'blocked' => 'boolean',
     ];
 
-    public function card()
+    /*public function card()
     {
-        return $this->hasOne(Card::class, 'id');
+        return $this->hasOne(Card::class, 'user_id', 'id');
+    }*/
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function supplyOrders()
+    {
+        return $this->hasMany(SupplyOrder::class, 'registered_by_user_id');
+    }
+
+    public function stockAdjustments()
+    {
+        return $this->hasMany(StockAdjustment::class, 'registered_by_user_id');
     }
 }

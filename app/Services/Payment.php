@@ -11,6 +11,16 @@ class Payment
     // When the cvc code does not have 3 digits
     // When the cvc code starts with the digit 0
     // When the cvc code ends with the digit 2
+    public static function simulate(string $type, ?string $reference = null): bool
+    {
+        return match ($type) {
+            'Visa'   => self::payWithVisa($reference['card_number'] ?? '', $reference['cvc_code'] ?? ''),
+            'PayPal' => self::payWithPaypal($reference['email_address'] ?? ''),
+            'MBWAY'  => self::payWithMBway($reference['phone_number'] ?? ''),
+            default  => false,
+        };
+    }
+    
     public static function payWithVisa($card_number, $cvc_code)
     {
         $card_number = filter_var($card_number, FILTER_VALIDATE_INT);
