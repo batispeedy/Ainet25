@@ -7,7 +7,7 @@ class Order extends Model
 {
     protected $fillable = [
         'member_id', 'status', 'nif', 'total', 'shipping_cost',
-        'delivery_address', 'cancel_reason'
+        'delivery_address', 'cancel_reason', 'date', 'total_items' 
     ];
 
     public function member()

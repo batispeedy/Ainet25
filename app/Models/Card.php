@@ -14,6 +14,6 @@ class Card extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'id');
+        return $this->belongsTo(User::class, 'id', 'id'); // local key = id do cartão, foreign key = id do user
     }
 }

@@ -1,5 +1,4 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MembershipFeeController;
@@ -28,11 +27,14 @@ Route::post('/carrinho/adicionar/{id}', [CartController::class, 'add'])->name('c
 Route::delete('/carrinho/remover/{id}', [CartController::class, 'remove'])->name('cart.remove');
 Route::post('/carrinho/limpar', [CartController::class, 'clear'])->name('cart.clear');
 
-    // Checkout e Perfil (autenticado)
-    Route::middleware(['auth'])->group(function () {
-    // Checkout
-    Route::get('/checkout', fn () => view('checkout.index'))->name('checkout');
-    Route::post('/checkout/confirm', [CheckoutController::class, 'confirm'])->name('checkout.confirm');
+// Autenticados
+Route::middleware(['auth'])->group(function () {
+
+    // Checkout (apenas membros)
+    Route::middleware('member.only')->group(function () {
+        Route::get('/checkout', fn () => view('checkout.index'))->name('checkout');
+        Route::post('/checkout/confirm', [CheckoutController::class, 'confirm'])->name('checkout.confirm');
+    });
 
     // Perfil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -41,17 +43,17 @@ Route::post('/carrinho/limpar', [CartController::class, 'clear'])->name('cart.cl
     Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Quota
+    // Pagamento de Quota (visível a todos os autenticados)
     Route::get('/membership/pay', [MembershipFeeController::class, 'show'])->name('membership.show');
     Route::post('/membership/pay', [MembershipFeeController::class, 'pay'])->name('membership.pay');
 });
 
-// Dashboard (autenticado + email verificado)
+// Dashboard (autenticado + verificado)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
 });
 
-// Supply Orders (apenas direção)
+// Supply Orders (só para direção)
 Route::middleware(['auth', 'board.only'])->group(function () {
     Route::get('/supply-orders', [SupplyOrderController::class, 'index'])->name('supply_orders.index');
     Route::get('/supply-orders/create', [SupplyOrderController::class, 'create'])->name('supply_orders.create');
@@ -59,5 +61,5 @@ Route::middleware(['auth', 'board.only'])->group(function () {
     Route::post('/supply-orders/{order}/complete', [SupplyOrderController::class, 'complete'])->name('supply_orders.complete');
 });
 
-// Autenticação (login, registo, etc.)
+// Auth scaffolding
 require __DIR__.'/auth.php';

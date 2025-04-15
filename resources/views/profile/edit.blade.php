@@ -6,6 +6,27 @@
 <div class="max-w-5xl mx-auto bg-white rounded shadow p-6">
     <h1 class="text-3xl font-bold mb-6 text-gray-800">O Meu Perfil</h1>
 
+    @if ($errors->any())
+    <div class="mb-4 px-4 py-3 rounded bg-red-100 text-red-800">
+        <strong>Erros no formulário:</strong>
+        <ul class="mt-2 list-disc pl-5">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    @if(session('success'))
+    <div class="mb-4 px-4 py-3 rounded bg-green-100 text-green-800 flex items-center">
+        ✅ <span class="ml-2">{{ session('success') }}</span>
+    </div>
+    @elseif(session('error'))
+    <div class="mb-4 px-4 py-3 rounded bg-red-100 text-red-800 flex items-center">
+        ❌ <span class="ml-2">{{ session('error') }}</span>
+    </div>
+    @endif
+
     <!-- Tabs -->
     <div class="mb-6">
         <ul class="flex border-b" id="tabs">
@@ -25,17 +46,17 @@
 
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Nome</label>
-                <input type="text" name="name" value="{{ old('name', auth()->user()->name) }}" class="w-full border rounded px-3 py-2 mt-1">
+                <input type="text" name="name" value="{{ old('name', auth()->user()->name) }}" class="w-full border rounded px-3 py-2 mt-1 focus:ring-yellow-600 focus:border-yellow-600">
             </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">NIF</label>
-                <input type="text" name="nif" value="{{ old('nif', auth()->user()->nif) }}" class="w-full border rounded px-3 py-2 mt-1">
+                <input type="text" name="nif" value="{{ old('nif', auth()->user()->nif) }}" class="w-full border rounded px-3 py-2 mt-1 focus:ring-yellow-600 focus:border-yellow-600">
             </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Morada</label>
-                <input type="text" name="default_delivery_address" value="{{ old('default_delivery_address', auth()->user()->default_delivery_address) }}" class="w-full border rounded px-3 py-2 mt-1">
+                <input type="text" name="default_delivery_address" value="{{ old('default_delivery_address', auth()->user()->default_delivery_address) }}" class="w-full border rounded px-3 py-2 mt-1 focus:ring-yellow-600 focus:border-yellow-600">
             </div>
 
             <div class="mb-6">
@@ -45,8 +66,7 @@
             </div>
 
             <div class="flex justify-between mt-4">
-                <button type="submit" class="btn-rustic text-white px-6 py-2 rounded">Guardar Alterações</button>
-
+                <button type="submit" class="btn-rustic bg-yellow-800 hover:bg-yellow-700 text-white px-6 py-2 rounded shadow">Guardar Alterações</button>
                 <button form="delete-profile-form" type="submit" class="text-sm text-red-600 hover:underline">Eliminar Conta</button>
             </div>
         </form>
@@ -74,38 +94,62 @@
                 <input type="password" name="password_confirmation" class="w-full border rounded px-3 py-2 mt-1" required>
             </div>
 
-            <button type="submit" class="btn-rustic text-white px-6 py-2 rounded">Alterar Palavra-passe</button>
+            <button type="submit" class="btn-rustic bg-yellow-800 hover:bg-yellow-700 text-white px-6 py-2 rounded shadow">Alterar Palavra-passe</button>
         </form>
     </div>
 
     <!-- Cartão Virtual -->
     <div id="cartao" class="tab-content mb-12 hidden">
         <h2 class="text-xl font-semibold mb-3 text-gray-800">Cartão Virtual</h2>
-        @if(auth()->user()->card)
-            <div class="p-4 border rounded bg-gray-50 mb-4">
-                <p><strong>Número:</strong> {{ auth()->user()->card->card_number }}</p>
-                <p><strong>Saldo:</strong> {{ number_format(auth()->user()->card->balance, 2, ',', '.') }} €</p>
+
+        @if($card)
+        <div class="p-4 border rounded bg-gray-50 mb-4">
+            <p><strong>Número:</strong> {{ $card->card_number }}</p>
+            <p><strong>Titular:</strong> {{ auth()->user()->name }}</p>
+            <p><strong>Saldo:</strong> {{ number_format($card->balance, 2, ',', '.') }} €</p>
+        </div>
+
+        <!-- Formulário de Top-up -->
+        <form method="POST" action="{{ route('profile.topup') }}" class="bg-yellow-50 p-4 rounded shadow space-y-4">
+            @csrf
+
+            <div>
+                <label class="block text-sm font-medium">Valor a carregar (€)</label>
+                <input type="number" name="value" step="0.01" min="1" required class="w-full border rounded px-3 py-2 mt-1">
             </div>
 
-            <form method="POST" action="{{ route('profile.topup') }}" class="bg-yellow-50 p-4 rounded shadow">
-                @csrf
-                <div class="mb-4">
-                    <label class="block text-sm font-medium">Valor a carregar</label>
-                    <input type="number" name="value" step="0.01" min="1" class="w-full border rounded px-3 py-2 mt-1" required>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium">Método de pagamento</label>
-                    <select name="payment_type" class="w-full border rounded px-3 py-2 mt-1" required>
-                        <option value="">Seleciona</option>
-                        <option value="Visa">Visa</option>
-                        <option value="PayPal">PayPal</option>
-                        <option value="MBWAY">MB WAY</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-rustic text-white px-6 py-2 rounded">Carregar Saldo</button>
-            </form>
+            <div>
+                <label class="block text-sm font-medium">Método de Pagamento</label>
+                <select name="payment_type" id="payment_type" required class="w-full border rounded px-3 py-2 mt-1">
+                    <option value="">Seleciona</option>
+                    <option value="Visa">Visa</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="MBWAY">MB WAY</option>
+                </select>
+            </div>
+
+            <div id="visa_fields" class="hidden space-y-2">
+                <label class="block text-sm">Nº Cartão (16 dígitos)</label>
+                <input type="text" name="card_number" class="w-full border rounded px-3 py-2" placeholder="1234567812345678">
+
+                <label class="block text-sm">CVC (3 dígitos)</label>
+                <input type="text" name="cvc_code" class="w-full border rounded px-3 py-2" placeholder="123">
+            </div>
+
+            <div id="paypal_fields" class="hidden space-y-2">
+                <label class="block text-sm">Email PayPal</label>
+                <input type="email" name="email_address" class="w-full border rounded px-3 py-2" placeholder="teu@email.com">
+            </div>
+
+            <div id="mbway_fields" class="hidden space-y-2">
+                <label class="block text-sm">Número MB WAY</label>
+                <input type="text" name="phone_number" class="w-full border rounded px-3 py-2" placeholder="9XXXXXXXX">
+            </div>
+
+            <button type="submit" class="btn-rustic text-black px-6 py-2 rounded mt-4">💳 Carregar Saldo</button>
+        </form>
         @else
-            <p class="text-red-500">Ainda não tens cartão virtual associado.</p>
+        <p class="text-red-500">Ainda não tens cartão virtual associado.</p>
         @endif
     </div>
 
@@ -113,15 +157,15 @@
     <div id="transacoes" class="tab-content mb-12 hidden">
         <h2 class="text-xl font-semibold mb-3 text-gray-800">Histórico de Transações</h2>
         @if($transactions->isEmpty())
-            <p class="text-gray-500">Sem transações registadas.</p>
+        <p class="text-gray-500">Sem transações registadas.</p>
         @else
-            <ul class="space-y-2">
-                @foreach($transactions as $op)
-                    <li class="border rounded p-3 bg-gray-50">
-                        <span class="font-semibold">{{ ucfirst($op->type) }}</span> de {{ number_format($op->value, 2, ',', '.') }} € com {{ $op->payment_type }} em {{ $op->created_at->format('d/m/Y H:i') }}
-                    </li>
-                @endforeach
-            </ul>
+        <ul class="space-y-2">
+            @foreach($transactions as $op)
+            <li class="border rounded p-3 bg-gray-50">
+                <span class="font-semibold">{{ ucfirst($op->type) }}</span> de {{ number_format($op->value, 2, ',', '.') }} € com {{ $op->payment_type ?? 'virtual card' }} em {{ $op->created_at->format('d/m/Y H:i') }}
+            </li>
+            @endforeach
+        </ul>
         @endif
     </div>
 
@@ -129,19 +173,19 @@
     <div id="encomendas" class="tab-content mb-12 hidden">
         <h2 class="text-xl font-semibold mb-3 text-gray-800">Histórico de Encomendas</h2>
         @if($orders->isEmpty())
-            <p class="text-gray-500">Sem encomendas registadas.</p>
+        <p class="text-gray-500">Sem encomendas registadas.</p>
         @else
-            <ul class="space-y-2">
-                @foreach($orders as $order)
-                    <li class="border rounded p-3 bg-gray-50">
-                        <p><strong>Encomenda #{{ $order->id }}</strong> - {{ $order->created_at->format('d/m/Y H:i') }}</p>
-                        <p>Total: {{ number_format($order->total_price, 2, ',', '.') }} € ({{ ucfirst($order->status) }})</p>
-                        @if($order->receipt_path)
-                            <a href="{{ asset('storage/' . $order->receipt_path) }}" target="_blank" class="text-blue-600 underline">Ver Recibo</a>
-                        @endif
-                    </li>
-                @endforeach
-            </ul>
+        <ul class="space-y-2">
+            @foreach($orders as $order)
+            <li class="border rounded p-3 bg-gray-50">
+                <p><strong>Encomenda #{{ $order->id }}</strong> - {{ $order->created_at->format('d/m/Y H:i') }}</p>
+                <p>Total: {{ number_format($order->total_price, 2, ',', '.') }} € ({{ ucfirst($order->status) }})</p>
+                @if($order->receipt_path)
+                <a href="{{ asset('storage/' . $order->receipt_path) }}" target="_blank" class="text-blue-600 underline">Ver Recibo</a>
+                @endif
+            </li>
+            @endforeach
+        </ul>
         @endif
     </div>
 
@@ -151,7 +195,7 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function() {
         const tabs = document.querySelectorAll(".tab-link");
         const contents = document.querySelectorAll(".tab-content");
 
@@ -161,16 +205,40 @@
         }
 
         tabs.forEach(tab => {
-            tab.addEventListener("click", function (e) {
+            tab.addEventListener("click", function(e) {
                 e.preventDefault();
                 showTab(this.dataset.tab);
             });
         });
 
-        // Mostrar a primeira tab por padrão
         if (tabs.length) {
             tabs[0].click();
         }
+
+        const paymentSelect = document.getElementById("payment_type");
+        const visa = document.getElementById("visa_fields");
+        const paypal = document.getElementById("paypal_fields");
+        const mbway = document.getElementById("mbway_fields");
+
+        function toggleFields() {
+            visa.classList.add('hidden');
+            paypal.classList.add('hidden');
+            mbway.classList.add('hidden');
+
+            switch (paymentSelect.value) {
+                case 'Visa':
+                    visa.classList.remove('hidden');
+                    break;
+                case 'PayPal':
+                    paypal.classList.remove('hidden');
+                    break;
+                case 'MBWAY':
+                    mbway.classList.remove('hidden');
+                    break;
+            }
+        }
+
+        paymentSelect.addEventListener("change", toggleFields);
     });
 </script>
 @endsection
