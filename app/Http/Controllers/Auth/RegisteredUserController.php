@@ -41,7 +41,7 @@ class RegisteredUserController extends Controller
 
     $data = $request->only(['name', 'email', 'gender', 'nif', 'default_delivery_address']);
     $data['password'] = Hash::make($request->password);
-    $data['type'] = 'member'; // 👈 Isto evita o erro da coluna obrigatória
+    $data['type'] = 'pending_member';
 
     if ($request->hasFile('photo')) {
         $data['photo'] = $request->file('photo')->store('users', 'public');

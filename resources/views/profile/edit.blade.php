@@ -70,7 +70,17 @@
                 <button form="delete-profile-form" type="submit" class="text-sm text-red-600 hover:underline">Eliminar Conta</button>
             </div>
         </form>
-
+        @auth
+        @if (auth()->user()->type === 'pending_member')
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mt-6">
+            <p class="text-yellow-800 mb-2">Ainda não és membro efetivo.</p>
+            <a href="{{ route('membership.show') }}"
+                class="inline-block bg-yellow-700 text-black font-semibold px-5 py-2 rounded shadow hover:bg-yellow-600 transition duration-200">
+                💳 Tornar-me Membro
+            </a>
+        </div>
+        @endif
+        @endauth
         <form id="delete-profile-form" method="POST" action="{{ route('profile.destroy') }}" onsubmit="return confirm('Tens a certeza que queres eliminar a tua conta?');">
             @csrf
             @method('DELETE')

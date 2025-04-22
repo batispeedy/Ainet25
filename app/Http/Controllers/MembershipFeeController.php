@@ -25,14 +25,21 @@ class MembershipFeeController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+        // Já é membro
         if ($user->type === 'member') {
             return redirect()->route('profile.edit')->with('success', 'Já és membro do clube.');
         }
+ 
+        // Apenas pending_member pode pagar
+        if ($user->type !== 'pending_member') {
+            return redirect()->route('profile.edit')->with('error', 'Não tens permissão para pagar a quota.');
+        }
 
+        // Validação do pagamento
         $request->validate([
             'payment_type' => 'required|in:Visa,PayPal,MBWAY',
-            'card_number' => 'required_if:payment_type,Visa',
-            'cvc_code' => 'required_if:payment_type,Visa',
+            'card_number' => 'required_if:payment_type,Visa|digits:16',
+            'cvc_code' => 'required_if:payment_type,Visa|digits:3',
             'email_address' => 'required_if:payment_type,PayPal|email',
             'phone_number' => 'required_if:payment_type,MBWAY|regex:/^9\d{8}$/',
         ]);
@@ -52,30 +59,31 @@ class MembershipFeeController extends Controller
             return back()->with('error', 'Cartão virtual não encontrado.');
         }
 
-        $settings = Setting::first();
-        $fee = $settings ? $settings->membership_fee : 100;
+        $fee = Setting::first()->membership_fee ?? 100;
 
         if ($card->balance < $fee) {
             return back()->with('error', 'Saldo insuficiente no cartão virtual.');
         }
 
-        // Debita o valor
+        // Debitar e registar operação
         $card->balance -= $fee;
         $card->save();
 
-        // Regista a operação
         Operation::create([
             'card_id' => $card->id,
             'type' => 'debit',
             'value' => $fee,
-            'date' => Carbon::now()->toDateString(),
+            'date' => now()->toDateString(),
             'debit_type' => 'membership_fee',
+            'payment_type' => $request->payment_type,
+            'payment_reference' => $request->payment_type === 'Visa' ? $request->card_number
+                : ($request->payment_type === 'PayPal' ? $request->email_address : $request->phone_number),
         ]);
 
-        // Atualiza o tipo de user
+        // Atualizar tipo de utilizador
         $user->type = 'member';
         $user->save();
 
-        return redirect()->route('profile.edit')->with('success', 'Quota paga com sucesso! Agora és membro do clube.');
+        return redirect()->route('membership.confirmation');
     }
 }
