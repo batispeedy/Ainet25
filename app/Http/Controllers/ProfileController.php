@@ -154,7 +154,7 @@ class ProfileController extends Controller
             'payment_reference'=> $this->extractReference($request),
         ]);
 
-        return redirect()->route('profile.index')
+        return redirect()->route('profile.edit')
             ->with('success', 'Saldo carregado com sucesso!')
             ->with('active_tab', 'cartao');
     }

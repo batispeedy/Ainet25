@@ -49,23 +49,34 @@ class InventoryController extends Controller
     }
 
     /**
-     * Create a manual supply order.
+     * Create a supply order, manual or automatic up to stock_upper_limit.
      */
     public function createSupplyOrder(Request $request)
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity'   => 'required|integer|min:1',
+            'quantity'   => 'nullable|integer|min:1',
         ]);
+
+        $product = Product::findOrFail($request->product_id);
+
+        // Se o utilizador não especificou quantity, auto-calc até upper limit
+        $quantity = $request->filled('quantity')
+            ? (int) $request->quantity
+            : max(0, $product->stock_upper_limit - $product->stock);
+
+        if ($quantity <= 0) {
+            return back()->with('error', "Não é necessário encomendar stock para “{$product->name}”.");
+        }
 
         SupplyOrder::create([
-            'product_id'             => $request->product_id,
-            'registered_by_user_id'  => Auth::id(),
-            'status'                 => 'requested',
-            'quantity'               => $request->quantity,
+            'product_id'            => $product->id,
+            'registered_by_user_id' => Auth::id(),
+            'status'                => 'requested',
+            'quantity'              => $quantity,
         ]);
 
-        return back()->with('success', 'Supply order criada.');
+        return back()->with('success', "Supply order criada para “{$product->name}” (quantidade: {$quantity}).");
     }
 
     /**
@@ -74,12 +85,15 @@ class InventoryController extends Controller
     public function completeSupplyOrder($id)
     {
         $order = SupplyOrder::findOrFail($id);
+
         if ($order->status !== 'requested') {
-            return back()->with('error', 'Ordem já completada.');
+            return back()->with('error', 'Esta ordem já foi completada.');
         }
 
         DB::transaction(function () use ($order) {
             $order->update(['status' => 'completed']);
+
+            // Atualiza stock do produto
             Product::where('id', $order->product_id)
                 ->increment('stock', $order->quantity);
         });
@@ -92,19 +106,20 @@ class InventoryController extends Controller
      */
     public function adjustStock(Request $request, $id)
     {
-        $request->validate(['quantity' => 'required|integer']);
         $product = Product::findOrFail($id);
-        $delta = $request->quantity - $product->stock;
 
-        DB::transaction(function () use ($product, $delta) {
-            $product->update(['stock' => $product->stock + $delta]);
-            StockAdjustment::create([
-                'product_id'             => $product->id,
-                'registered_by_user_id'  => Auth::id(),
-                'quantity_changed'       => $delta,
-            ]);
-        });
+        $newQuantity = (int) $request->input('quantity');
+        $delta       = $newQuantity - $product->stock;
 
-        return back()->with('success', 'Stock ajustado manualmente.');
+        $product->stock = $newQuantity;
+        $product->save();
+
+        StockAdjustment::create([
+            'product_id'            => $product->id,
+            'registered_by_user_id' => Auth::id(),
+            'quantity_changed'      => $delta,
+        ]);
+
+        return back()->with('success', 'Stock ajustado com sucesso.');
     }
 }

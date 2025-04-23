@@ -16,7 +16,7 @@
     </div>
   @endif
 
-  <form action="{{ route('shipping_costs.store') }}" method="POST">
+  <form action="{{ route('settings.shipping_costs.store') }}" method="POST">
     @csrf
     <div class="mb-4">
       <label>Valor Mínimo (€)</label>
@@ -37,7 +37,7 @@
              class="w-full border rounded p-2" required>
     </div>
     <div class="text-right">
-      <a href="{{ route('shipping_costs.index') }}"
+      <a href="{{ route('settings.shipping_costs.index') }}"
          class="mr-4 text-gray-600 hover:underline">Cancelar</a>
       <button type="submit" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded">
         Criar

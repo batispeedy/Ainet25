@@ -8,9 +8,8 @@ class StockAdjustment extends Model
 {
     protected $fillable = [
         'product_id',
-        'user_id',
-        'quantity',
-        'reason',
+        'registered_by_user_id',
+        'quantity_changed',
     ];
 
     public function user()

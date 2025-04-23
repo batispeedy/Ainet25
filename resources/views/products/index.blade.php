@@ -6,7 +6,7 @@
 <div class="max-w-7xl mx-auto bg-white p-6 rounded shadow">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold">Produtos</h1>
-    <a href="{{ route('products.create') }}"
+    <a href="{{ route('settings.products.create') }}"
        class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded">
       + Novo Produto
     </a>
@@ -44,8 +44,8 @@
         <td class="px-4 py-2">{{ number_format($prod->price,2,',','.') }} €</td>
         <td class="px-4 py-2">{{ $prod->stock }}</td>
         <td class="px-4 py-2 space-x-2">
-          <a href="{{ route('products.edit',$prod) }}" class="text-blue-600 hover:underline">Editar</a>
-          <form action="{{ route('products.destroy',$prod) }}" method="POST" class="inline">
+          <a href="{{ route('settings.products.edit',$prod) }}" class="text-blue-600 hover:underline">Editar</a>
+          <form action="{{ route('settings.products.destroy',$prod) }}" method="POST" class="inline">
             @csrf @method('DELETE')
             <button onclick="return confirm('Eliminar este produto?')"
                     class="text-red-600 hover:underline">

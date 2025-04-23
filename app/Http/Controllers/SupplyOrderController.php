@@ -11,7 +11,11 @@ class SupplyOrderController extends Controller
 {
     public function index()
     {
-        $orders = SupplyOrder::with('product', 'registeredBy')->latest()->get();
+        $orders = SupplyOrder::with(['product', 'registeredBy'])
+            ->orderByRaw("status = 'requested' DESC")
+            ->orderBy('created_at', 'DESC')
+            ->paginate(15);
+
         return view('supply_orders.index', compact('orders'));
     }
 

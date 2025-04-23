@@ -6,7 +6,7 @@
 <div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold">Faixas de Portes</h1>
-    <a href="{{ route('shipping_costs.create') }}"
+    <a href="{{ route('settings.shipping_costs.create') }}"
        class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded">
       + Nova Faixa
     </a>
@@ -34,8 +34,8 @@
         <td class="px-4 py-2">{{ number_format($c->max_value_threshold,2,',','.') }}</td>
         <td class="px-4 py-2">{{ number_format($c->shipping_cost,2,',','.') }}</td>
         <td class="px-4 py-2 space-x-2">
-          <a href="{{ route('shipping_costs.edit',$c) }}" class="text-blue-600 hover:underline">Editar</a>
-          <form action="{{ route('shipping_costs.destroy',$c) }}" method="POST" class="inline">
+          <a href="{{ route('settings.shipping_costs.edit',$c) }}" class="text-blue-600 hover:underline">Editar</a>
+          <form action="{{ route('settings.shipping_costs.destroy',$c) }}" method="POST" class="inline">
             @csrf @method('DELETE')
             <button onclick="return confirm('Remover esta faixa?')"
                     class="text-red-600 hover:underline">Eliminar</button>

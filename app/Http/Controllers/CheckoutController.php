@@ -20,20 +20,19 @@ class CheckoutController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        // retira o can:member-only daqui
     }
 
     public function show(Request $request)
     {
         $user = Auth::user();
 
-        // Só membros com tipo 'member' (ou 'board', se quiser permitir) podem prosseguir
+        // Apenas membros (member ou board) podem aceder
         if (! in_array($user->type, ['member', 'board'])) {
             return redirect()->route('membership.show')
                              ->with('error', 'Tens de pagar a quota para aceder ao checkout.');
         }
 
-        $cart = session()->get('cart', []);
+        $cart = session('cart', []);
         $totalItems = 0;
 
         foreach ($cart as &$item) {
@@ -49,17 +48,18 @@ class CheckoutController extends Controller
 
         return view('checkout.index', compact('cart', 'totalItems', 'shippingCost', 'total'));
     }
+
     public function confirm(Request $request)
     {
         $request->validate([
-            'nif'          => 'required|digits:9',
-            'address'      => 'required|string|max:255',
-            'payment_type' => 'required|in:Visa,PayPal,MBWAY',
-            // additional validations per payment type...
+            'nif'           => 'required|digits:9',
+            'address'       => 'required|string|max:255',
+            'payment_type'  => 'required|in:Visa,PayPal,MBWAY',
+            // Aqui podias adicionar as validações específicas por método...
         ]);
 
         $user = Auth::user();
-        $cart = session()->get('cart', []);
+        $cart = session('cart', []);
         $totalItems = 0;
 
         foreach ($cart as &$item) {
@@ -74,26 +74,39 @@ class CheckoutController extends Controller
         $total = $totalItems + $shippingCost;
 
         DB::transaction(function () use ($user, $cart, $totalItems, $shippingCost, $total, $request) {
-            // Load user's card
+            // Carrega o cartão do utilizador
             $card = Card::findOrFail($user->id);
 
             if ($card->balance < $total) {
+                // Força rollback e mostra erro
                 abort(400, 'Saldo insuficiente no cartão.');
             }
 
-            // Create the order
+            // Debita o saldo do cartão
+            $card->decrement('balance', $total);
+
+            // Regista a operação de débito
+            Operation::create([
+                'card_id'    => $card->id,
+                'type'       => 'debit',
+                'debit_type' => 'order',
+                'value'      => $total,
+                'date'       => now()->toDateString(),
+            ]);
+
+            // Cria a encomenda
             $order = Order::create([
                 'member_id'        => $user->id,
                 'status'           => 'pending',
                 'nif'              => $request->nif,
                 'delivery_address' => $request->address,
                 'total_items'      => $totalItems,
-                'shipping_cost'   => $shippingCost,
+                'shipping_cost'    => $shippingCost,
                 'total'            => $total,
                 'date'             => now()->toDateString(),
             ]);
 
-            // Order items and stock decrement
+            // Itens + corrige stock
             foreach ($cart as $item) {
                 OrderItem::create([
                     'order_id'   => $order->id,
@@ -103,32 +116,23 @@ class CheckoutController extends Controller
                     'discount'   => $item['discount'],
                     'subtotal'   => $item['subtotal'],
                 ]);
-
-                Product::where('id', $item['id'])->decrement('stock', $item['quantity']);
+                Product::where('id', $item['id'])
+                       ->decrement('stock', $item['quantity']);
             }
 
-            // Debit card operation
-            Operation::create([
-                'card_id'    => $card->id,
-                'type'       => 'debit',
-                'debit_type' => 'order',
-                'value'      => $order->total,
-                'date'       => now()->toDateString(),
-                'order_id'   => $order->id,
-            ]);
-
-            // Generate and save PDF receipt
+            // PDF e envio de e-mail
             $pdfName = 'receipt_'.$order->id.'.pdf';
             Pdf::loadView('emails.orders.receipt', compact('order'))
-                ->save(storage_path('app/public/receipts/'.$pdfName));
+               ->save(storage_path('app/public/receipts/'.$pdfName));
             $order->update(['pdf_receipt' => $pdfName]);
 
-            // Send email with receipt
             Mail::to($user->email)->send(new OrderReceiptMail($order));
         });
 
+        // Limpa carrinho e redireciona para o histórico
         session()->forget('cart');
 
-        return redirect()->route('checkout')->with('success', 'Encomenda registada com sucesso!');
+        return redirect()->route('dashboard')
+                         ->with('success', 'Encomenda registada com sucesso!');
     }
 }

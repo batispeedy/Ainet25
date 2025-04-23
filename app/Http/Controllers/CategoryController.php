@@ -8,12 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-        $this->middleware('can:manage-categories');
-    }
-
+    
     public function index()
     {
         $categories = Category::withTrashed()->paginate(10);

@@ -16,7 +16,7 @@
     </div>
   @endif
 
-  <form action="{{ route('products.update',$product) }}" method="POST" enctype="multipart/form-data">
+  <form action="{{ route('settings.products.update',$product) }}" method="POST" enctype="multipart/form-data">
     @csrf @method('PATCH')
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -92,7 +92,7 @@
     </div>
 
     <div class="text-right mt-6">
-      <a href="{{ route('products.index') }}"
+      <a href="{{ route('settings.products.index') }}"
          class="mr-4 text-gray-600 hover:underline">Cancelar</a>
       <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded">
         Guardar Alterações

@@ -2,24 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SupplyOrder extends Model
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'product_id',
-        'registered_by_user_id',
-        'status',
-        'quantity',
-        'custom',
-    ];
-
-    protected $casts = [
-        'custom' => 'array',
-    ];
+    protected $fillable = ['product_id','registered_by_user_id','status','quantity'];
 
     public function product()
     {

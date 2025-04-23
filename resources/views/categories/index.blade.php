@@ -6,7 +6,7 @@
 <div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold">Categorias</h1>
-    <a href="{{ route('categories.create') }}"
+    <a href="{{ route('settings.categories.create') }}"
        class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded">
       + Nova Categoria
     </a>
@@ -39,9 +39,9 @@
           @endif
         </td>
         <td class="px-4 py-2 text-center space-x-2">
-          <a href="{{ route('categories.edit', $category) }}"
+          <a href="{{ route('settings.categories.edit', $category) }}"
              class="text-blue-600 hover:underline">Editar</a>
-          <form action="{{ route('categories.destroy', $category) }}" method="POST" class="inline">
+          <form action="{{ route('settings.categories.destroy', $category) }}" method="POST" class="inline">
             @csrf @method('DELETE')
             <button type="submit" class="text-red-600 hover:underline"
                     onclick="return confirm('Eliminar esta categoria?')">

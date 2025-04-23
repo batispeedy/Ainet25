@@ -60,7 +60,7 @@
         </table>
 
         <p>Em anexo está o recibo em formato PDF.</p>
-        <p>Para qualquer dúvida, visita a tua <a href="{{ route('profile.index') }}">página de perfil</a> ou contacta-nos.</p>
+        <p>Para qualquer dúvida, visita a tua <a href="{{ route('profile.edit') }}">página de perfil</a> ou contacta-nos.</p>
         <p>Cumprimentos,<br>Grocery Club</p>
     </div>
 </body>

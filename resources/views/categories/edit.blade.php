@@ -16,7 +16,7 @@
     </div>
   @endif
 
-  <form action="{{ route('categories.update', $category) }}" method="POST" enctype="multipart/form-data">
+  <form action="{{ route('settings.categories.update', $category) }}" method="POST" enctype="multipart/form-data">
     @csrf @method('PATCH')
 
     <div class="mb-4">
@@ -41,7 +41,7 @@
     </div>
 
     <div class="text-right">
-      <a href="{{ route('categories.index') }}"
+      <a href="{{ route('settings.categories.index') }}"
          class="mr-4 text-gray-600 hover:underline">Cancelar</a>
       <button type="submit"
               class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded">
