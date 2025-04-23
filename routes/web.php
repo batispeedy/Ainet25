@@ -132,12 +132,16 @@ Route::middleware(['auth', 'can:manage-orders'])->group(function () {
 });
 
 // Estatísticas
-Route::middleware(['auth', 'can:manage-stats'])->group(function () {
-    Route::get('stats', [StatsController::class, 'index'])->name('stats.index');
-});
-Route::middleware('auth')->group(function () {
-    Route::get('stats/personal', [StatsController::class, 'personal'])->name('stats.personal');
-});
+Route::middleware('auth')->group(function() {
+    // Rota para membros normais verem as suas estatísticas
+    Route::get('/stats/personal', [StatsController::class, 'personal'])
+        ->name('stats.personal');
 
+    // Rotas apenas para board members
+    Route::middleware('can:manage-settings')->group(function() {
+        Route::get('/stats', [StatsController::class, 'index'])
+            ->name('stats.index');
+    });
+});
 // Autenticação (login, registo, reset, verificação de e-mail…)
 require __DIR__ . '/auth.php';

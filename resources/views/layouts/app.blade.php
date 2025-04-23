@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt">
-
 <head>
   <meta charset="UTF-8">
   <title>@yield('title', 'Grocery Club')</title>
@@ -16,7 +15,6 @@
     #settings-menu a { color: #000 !important; }
   </style>
 </head>
-
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
   <!-- NAVBAR -->
@@ -60,6 +58,13 @@
           <a href="{{ route('supply_orders.index') }}">🔄 Ordens de Reposição</a>
         @endcan
 
+        {{-- Apenas membros veem suas próprias estatísticas --}}
+        @can('view-personal-stats')
+          <a href="{{ route('stats.personal') }}" class="px-4 py-2 hover:underline">
+            📊 Minhas Estatísticas
+          </a>
+        @endcan
+
         <a href="{{ route('profile.edit') }}">Perfil</a>
         <form method="POST" action="{{ route('logout') }}" class="inline">
           @csrf
@@ -73,7 +78,7 @@
     </div>
   </nav>
 
-  <!-- CONTEÚDO -->
+  <!-- CONTEÚDO PRINCIPAL -->
   <main class="flex-grow px-6 py-8">
     @yield('content')
   </main>
@@ -95,5 +100,4 @@
   @endauth
 
 </body>
-
 </html>

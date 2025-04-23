@@ -35,6 +35,7 @@
             <li class="mr-1"><a href="#" data-tab="cartao" class="tab-link inline-block py-2 px-4 font-semibold text-gray-700 hover:text-black border-l border-t border-r rounded-t">Cartão Virtual</a></li>
             <li class="mr-1"><a href="#" data-tab="transacoes" class="tab-link inline-block py-2 px-4 font-semibold text-gray-700 hover:text-black border-l border-t border-r rounded-t">Transações</a></li>
             <li class="mr-1"><a href="#" data-tab="encomendas" class="tab-link inline-block py-2 px-4 font-semibold text-gray-700 hover:text-black border-l border-t border-r rounded-t">Encomendas</a></li>
+            <li class="mr-1"><a href="#" data-tab="estatisticas" class="tab-link inline-block py-2 px-4 font-semibold text-gray-700 hover:text-black border-l border-t border-r rounded-t">Estatísticas</a></li>
         </ul>
     </div>
 
@@ -237,6 +238,20 @@
         </ul>
         @endif
     </div>
+    {{-- Estatísticas Pessoais --}}
+    <div id="estatisticas" class="tab-content mb-12 hidden">
+        <h2 class="text-xl font-semibold mb-3">Minhas Estatísticas</h2>
+        @php
+            use App\Models\Order;
+            $total = Order::where('member_id',auth()->id())->sum('total');
+            $count = Order::where('member_id',auth()->id())->count();
+            $avg = $count ? $total/$count : 0;
+        @endphp
+        <p><strong>Total Gasto:</strong> {{ number_format($total,2,',','.') }} €</p>
+        <p><strong>Encomendas:</strong> {{ $count }}</p>
+        <p><strong>Média por Encomenda:</strong> {{ number_format($avg,2,',','.') }} €</p>
+    </div>
+
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
