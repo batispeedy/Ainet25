@@ -27,7 +27,7 @@ class ProfileController extends Controller
             ? Operation::where('card_id', $card->id)->latest()->get()
             : collect();
 
-        $orders = Order::where('user_id', $user->id)->latest()->get();
+        $orders = Order::where('member_id', $user->id)->latest()->get();
 
         return view('profile.edit', compact('transactions', 'orders', 'card'));
     }
@@ -38,24 +38,24 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'nif' => 'nullable|string|max:20',
-            'default_delivery_address' => 'nullable|string|max:255',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'name'                      => 'required|string|max:255',
+            'nif'                       => 'nullable|string|max:20',
+            'default_delivery_address'  => 'nullable|string|max:255',
+            'photo'                     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $user->name = $request->name;
-        $user->nif = $request->nif;
+        $user->name                     = $request->name;
+        $user->nif                      = $request->nif;
         $user->default_delivery_address = $request->default_delivery_address;
 
         if ($request->hasFile('photo')) {
-            $filename = 'user_' . $user->id . '.' . $request->photo->extension();
+            $filename = 'user_'.$user->id.'.'.$request->photo->extension();
             $request->photo->storeAs('public/users', $filename);
             $user->photo = $filename;
         }
 
         /** @var User $user */
-        $user->save(); // <-- evita erro com anotação
+        $user->save();
 
         return back()->with('success', 'Perfil atualizado com sucesso.');
     }
@@ -68,9 +68,9 @@ class ProfileController extends Controller
         Auth::logout();
 
         /** @var User $user */
-        $user->delete(); // <-- evita erro com anotação
+        $user->delete();
 
-        return redirect('/')->with('success', 'Conta eliminada com sucesso.');
+        return redirect()->route('home')->with('success', 'Conta eliminada com sucesso.');
     }
 
     public function updatePassword(Request $request)
@@ -84,7 +84,7 @@ class ProfileController extends Controller
         $user->password = Hash::make($request->password);
 
         /** @var User $user */
-        $user->save(); // <-- evita erro com anotação
+        $user->save();
 
         return back()->with('success', 'Palavra-passe alterada com sucesso!');
     }
@@ -95,20 +95,20 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $rules = [
-            'value' => 'required|numeric|min:1',
+            'value'        => 'required|numeric|min:1',
             'payment_type' => 'required|in:Visa,PayPal,MBWAY',
         ];
 
         switch ($request->payment_type) {
             case 'Visa':
                 $rules['card_number'] = 'required|digits:16';
-                $rules['cvc_code'] = 'required|digits:3';
+                $rules['cvc_code']    = 'required|digits:3';
                 break;
             case 'PayPal':
                 $rules['email_address'] = 'required|email';
                 break;
             case 'MBWAY':
-                $rules['phone_number'] = 'required|regex:/^9\d{8}$/';
+                $rules['phone_number']  = ['required','regex:/^9\\d{8}$/'];
                 break;
         }
 
@@ -122,12 +122,12 @@ class ProfileController extends Controller
         }
 
         $reference = match ($request->payment_type) {
-            'Visa' => ['card_number' => $request->card_number, 'cvc_code' => $request->cvc_code],
-            'PayPal' => ['email_address' => $request->email_address],
-            'MBWAY' => ['phone_number' => $request->phone_number],
+            'Visa'   => ['card_number'=>$request->card_number,'cvc_code'=>$request->cvc_code],
+            'PayPal' => ['email_address'=>$request->email_address],
+            'MBWAY'  => ['phone_number'=>$request->phone_number],
         };
 
-        if (!Payment::simulate($request->payment_type, $reference)) {
+        if (! Payment::simulate($request->payment_type, $reference)) {
             return back()
                 ->with('error', 'Pagamento falhou. Verifica os dados.')
                 ->withInput()
@@ -136,25 +136,25 @@ class ProfileController extends Controller
 
         /** @var Card|null $card */
         $card = Card::find($user->id);
-        if (!$card) {
-            return back()->with('error', 'Cartão não encontrado.')->with('active_tab', 'cartao');
+        if (! $card) {
+            return back()->with('error', 'Cartão não encontrado.')
+                         ->with('active_tab','cartao');
         }
 
         $card->balance += $request->value;
-        /** @var Card $card */
-        $card->save(); // <-- evita erro com anotação
+        $card->save();
 
         Operation::create([
-            'card_id' => $card->id,
-            'type' => 'credit',
-            'value' => $request->value,
-            'date' => Carbon::now()->toDateString(),
-            'credit_type' => 'payment',
-            'payment_type' => $request->payment_type,
-            'payment_reference' => $this->extractReference($request),
+            'card_id'          => $card->id,
+            'type'             => 'credit',
+            'value'            => $request->value,
+            'date'             => Carbon::now()->toDateString(),
+            'credit_type'      => 'payment',
+            'payment_type'     => $request->payment_type,
+            'payment_reference'=> $this->extractReference($request),
         ]);
 
-        return redirect()->route('profile.edit')
+        return redirect()->route('profile.index')
             ->with('success', 'Saldo carregado com sucesso!')
             ->with('active_tab', 'cartao');
     }
@@ -162,10 +162,10 @@ class ProfileController extends Controller
     private function extractReference(Request $request): string
     {
         return match ($request->payment_type) {
-            'Visa' => $request->card_number,
+            'Visa'   => $request->card_number,
             'PayPal' => $request->email_address,
-            'MBWAY' => $request->phone_number,
-            default => '',
+            'MBWAY'  => $request->phone_number,
+            default  => '',
         };
     }
 }

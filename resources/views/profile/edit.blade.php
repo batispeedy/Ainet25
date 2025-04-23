@@ -181,27 +181,47 @@
 
     <!-- Encomendas -->
     <div id="encomendas" class="tab-content mb-12 hidden">
-        <h2 class="text-xl font-semibold mb-3 text-gray-800">Histórico de Encomendas</h2>
-        @if($orders->isEmpty())
+    <h2 class="text-xl font-semibold mb-3 text-gray-800">Histórico de Encomendas</h2>
+
+    @if($orders->isEmpty())
         <p class="text-gray-500">Sem encomendas registadas.</p>
-        @else
+    @else
         <ul class="space-y-2">
             @foreach($orders as $order)
-            <li class="border rounded p-3 bg-gray-50">
-                <p><strong>Encomenda #{{ $order->id }}</strong> - {{ $order->created_at->format('d/m/Y H:i') }}</p>
-                <p>Total: {{ number_format($order->total_price, 2, ',', '.') }} € ({{ ucfirst($order->status) }})</p>
-                @if($order->receipt_path)
-                <a href="{{ asset('storage/' . $order->receipt_path) }}" target="_blank" class="text-blue-600 underline">Ver Recibo</a>
-                @endif
-            </li>
+                <li class="border rounded p-3 bg-gray-50">
+                    <p>
+                        <strong>Encomenda #{{ $order->id }}</strong>
+                        – {{ \Carbon\Carbon::parse($order->date)->format('d/m/Y') }}
+                    </p>
+                    <p>
+                        Total:
+                        {{ number_format($order->total, 2, ',', '.') }} €
+                        ({{ ucfirst($order->status) }})
+                    </p>
+
+                    @if($order->pdf_receipt)
+                        <a href="{{ asset('storage/receipts/'.$order->pdf_receipt) }}"
+                           target="_blank" class="text-blue-600 underline">
+                            Ver Recibo
+                        </a>
+                    @endif
+
+                    @if($order->status === 'pending')
+                        <form method="POST"
+                              action="{{ route('orders.cancel', $order) }}"
+                              class="mt-2"
+                              onsubmit="return confirm('Tens a certeza que queres cancelar esta encomenda?');">
+                            @csrf
+                            <button type="submit"
+                                    class="text-red-600 hover:underline">
+                                Cancelar Encomenda
+                            </button>
+                        </form>
+                    @endif
+                </li>
             @endforeach
         </ul>
-        @endif
-    </div>
-
-    <div class="text-right mt-6">
-        <a href="{{ route('store.index') }}" class="btn-rustic px-6 py-2 text-white rounded">Voltar à Loja</a>
-    </div>
+    @endif
 </div>
 
 <script>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
     <meta charset="UTF-8">
     <title>@yield('title', 'Grocery Club')</title>
@@ -29,6 +30,7 @@
         }
     </style>
 </head>
+
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
     <!-- NAVBAR -->
@@ -39,17 +41,42 @@
             <a href="{{ route('cart.index') }}">🛒 Carrinho</a>
 
             @auth
-                <span class="username mr-3">Olá, {{ Auth::user()->name }}</span>
-                <a href="{{ route('dashboard') }}">Dashboard</a>
-                <a href="{{ route('profile.edit') }}">Perfil</a>
-                <form method="POST" action="{{ route('logout') }}" class="inline">
-                    @csrf
-                    <button type="submit">Sair</button>
-                </form>
+            <span class="username mr-3">Olá, {{ Auth::user()->name }}</span>
+            <a href="{{ route('dashboard') }}">Dashboard</a>
+
+            @if(Auth::user()->type === 'board')
+            <div class="relative group inline-block">
+                <button class="text-white bg-yellow-800 px-3 py-2 rounded hover:bg-yellow-700 transition">
+                    ⚙️ Configurações
+                </button>
+
+                <!-- Submenu oculto por defeito, aparece ao pairar sobre o grupo -->
+                <div
+                    class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-10">
+                    <a
+                        href="{{ route('categories.index') }}"
+                        class="block px-4 py-2 text-black hover:bg-gray-100">Categorias</a>
+                    <a
+                        href="{{ route('products.index') }}"
+                        class="block px-4 py-2 text-black hover:bg-gray-100">Produtos</a>
+                    <a
+                        href="{{ route('shipping_costs.index') }}"
+                        class="block px-4 py-2 text-black hover:bg-gray-100">Portes</a>
+                    <a
+                        href="{{ route('stats.index') }}"
+                        class="block px-4 py-2 text-black hover:bg-gray-100">Estatísticas</a>
+                </div>
+            </div>
+            @endif
+            <a href="{{ route('profile.edit') }}">Perfil</a>
+            <form method="POST" action="{{ route('logout') }}" class="inline">
+                @csrf
+                <button type="submit">Sair</button>
+            </form>
             @else
-                <a href="{{ route('login') }}">Entrar</a>
-                <a href="{{ route('register') }}">Registar</a>
-                <a href="{{ route('store.index') }}">Loja</a>
+            <a href="{{ route('login') }}">Entrar</a>
+            <a href="{{ route('register') }}">Registar</a>
+            <a href="{{ route('store.index') }}">Loja</a>
             @endauth
         </div>
     </nav>
@@ -60,4 +87,5 @@
     </main>
 
 </body>
+
 </html>

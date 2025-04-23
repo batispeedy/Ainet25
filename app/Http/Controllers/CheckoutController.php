@@ -1,102 +1,134 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Card;
-use App\Models\Operation;
+use Illuminate\Support\Facades\DB;
 use App\Models\Order;
-use App\Services\Payment;
-use Carbon\Carbon;
+use App\Models\OrderItem;
+use App\Models\Operation;
+use App\Models\Product;
+use App\Models\Card;
+use App\Models\SettingShippingCost;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderReceiptMail;
 
 class CheckoutController extends Controller
 {
-    public function confirm(Request $request)
+    public function __construct()
+    {
+        $this->middleware('auth');
+        // retira o can:member-only daqui
+    }
+
+    public function show(Request $request)
     {
         $user = Auth::user();
 
-        $rules = [
-            'nif' => 'required|string|max:20',
-            'address' => 'required|string|max:255',
+        // Só membros com tipo 'member' (ou 'board', se quiser permitir) podem prosseguir
+        if (! in_array($user->type, ['member', 'board'])) {
+            return redirect()->route('membership.show')
+                             ->with('error', 'Tens de pagar a quota para aceder ao checkout.');
+        }
+
+        $cart = session()->get('cart', []);
+        $totalItems = 0;
+
+        foreach ($cart as &$item) {
+            $item['subtotal'] = ($item['unit_price'] - $item['discount']) * $item['quantity'];
+            $totalItems += $item['subtotal'];
+        }
+
+        $shippingCost = SettingShippingCost::where('min_value_threshold', '<=', $totalItems)
+            ->where('max_value_threshold', '>', $totalItems)
+            ->value('shipping_cost') ?? 0;
+
+        $total = $totalItems + $shippingCost;
+
+        return view('checkout.index', compact('cart', 'totalItems', 'shippingCost', 'total'));
+    }
+    public function confirm(Request $request)
+    {
+        $request->validate([
+            'nif'          => 'required|digits:9',
+            'address'      => 'required|string|max:255',
             'payment_type' => 'required|in:Visa,PayPal,MBWAY',
-        ];
-
-        switch ($request->payment_type) {
-            case 'Visa':
-                $rules['card_number'] = 'required|digits:16';
-                $rules['cvc_code'] = 'required|digits:3';
-                break;
-            case 'PayPal':
-                $rules['email_address'] = 'required|email';
-                break;
-            case 'MBWAY':
-                $rules['phone_number'] = 'required|regex:/^9\d{8}$/';
-                break;
-        }
-
-        $validated = $request->validate($rules);
-
-        $cart = session('cart', []);
-        if (empty($cart)) {
-            return back()->with('error', 'O carrinho está vazio.');
-        }
-
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
-
-        $shipping = $total <= 50 ? 10 : ($total <= 100 ? 5 : 0);
-        $totalWithShipping = $total + $shipping;
-
-        $card = $user->card;
-        if (!$card) {
-            return back()->with('error', 'Cartão virtual não encontrado.');
-        }
-
-        if ($card->balance < $totalWithShipping) {
-            return back()->with('error', 'Saldo insuficiente no cartão virtual.');
-        }
-
-        // Simular pagamento
-        $reference = match ($request->payment_type) {
-            'Visa' => ['card_number' => $request->card_number, 'cvc_code' => $request->cvc_code],
-            'PayPal' => ['email_address' => $request->email_address],
-            'MBWAY' => ['phone_number' => $request->phone_number],
-        };
-
-        if (!Payment::simulate($request->payment_type, $reference)) {
-            return back()->with('error', 'O pagamento foi recusado. Verifica os dados.');
-        }
-
-        // Descontar saldo
-        $card->balance -= $totalWithShipping;
-        $card->save();
-
-        // Registar operação
-        Operation::create([
-            'card_id' => $card->id,
-            'type' => 'debit',
-            'value' => $totalWithShipping,
-            'date' => Carbon::now()->toDateString(),
-            'debit_type' => 'purchase',
-            'payment_type' => $request->payment_type,
-            'payment_reference' => $reference[array_key_first($reference)],
+            // additional validations per payment type...
         ]);
 
-        // Registar encomenda
-        Order::create([
-            'user_id' => $user->id,
-            'nif' => $request->nif,
-            'delivery_address' => $request->address,
-            'total_price' => $totalWithShipping,
-            'status' => 'pago',
-        ]);
+        $user = Auth::user();
+        $cart = session()->get('cart', []);
+        $totalItems = 0;
 
-        // Limpar carrinho
+        foreach ($cart as &$item) {
+            $item['subtotal'] = ($item['unit_price'] - $item['discount']) * $item['quantity'];
+            $totalItems += $item['subtotal'];
+        }
+
+        $shippingCost = SettingShippingCost::where('min_value_threshold', '<=', $totalItems)
+            ->where('max_value_threshold', '>', $totalItems)
+            ->value('shipping_cost') ?? 0;
+
+        $total = $totalItems + $shippingCost;
+
+        DB::transaction(function () use ($user, $cart, $totalItems, $shippingCost, $total, $request) {
+            // Load user's card
+            $card = Card::findOrFail($user->id);
+
+            if ($card->balance < $total) {
+                abort(400, 'Saldo insuficiente no cartão.');
+            }
+
+            // Create the order
+            $order = Order::create([
+                'member_id'        => $user->id,
+                'status'           => 'pending',
+                'nif'              => $request->nif,
+                'delivery_address' => $request->address,
+                'total_items'      => $totalItems,
+                'shipping_cost'   => $shippingCost,
+                'total'            => $total,
+                'date'             => now()->toDateString(),
+            ]);
+
+            // Order items and stock decrement
+            foreach ($cart as $item) {
+                OrderItem::create([
+                    'order_id'   => $order->id,
+                    'product_id' => $item['id'],
+                    'quantity'   => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'discount'   => $item['discount'],
+                    'subtotal'   => $item['subtotal'],
+                ]);
+
+                Product::where('id', $item['id'])->decrement('stock', $item['quantity']);
+            }
+
+            // Debit card operation
+            Operation::create([
+                'card_id'    => $card->id,
+                'type'       => 'debit',
+                'debit_type' => 'order',
+                'value'      => $order->total,
+                'date'       => now()->toDateString(),
+                'order_id'   => $order->id,
+            ]);
+
+            // Generate and save PDF receipt
+            $pdfName = 'receipt_'.$order->id.'.pdf';
+            Pdf::loadView('emails.orders.receipt', compact('order'))
+                ->save(storage_path('app/public/receipts/'.$pdfName));
+            $order->update(['pdf_receipt' => $pdfName]);
+
+            // Send email with receipt
+            Mail::to($user->email)->send(new OrderReceiptMail($order));
+        });
+
         session()->forget('cart');
 
-        return redirect()->route('checkout.success');
-
+        return redirect()->route('checkout')->with('success', 'Encomenda registada com sucesso!');
     }
 }

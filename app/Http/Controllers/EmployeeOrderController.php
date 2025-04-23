@@ -1,0 +1,101 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\Operation;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Mail\OrderReceiptMail;
+
+class EmployeeOrderController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware(['auth','can:manage-orders']);
+    }
+
+    // 1) Listar encomendas pendentes
+    public function index()
+    {
+        $orders = Order::where('status','pending')
+            ->with('items.product','member')
+            ->orderBy('date')
+            ->paginate(15);
+
+        return view('admin.orders.index', compact('orders'));
+    }
+
+    // 2) Completar encomenda
+    public function complete($id)
+    {
+        DB::transaction(function() use($id) {
+            $order = Order::with('items.product','member')->findOrFail($id);
+
+            // só pending
+            if ($order->status !== 'pending') {
+                abort(400, 'Encomenda não está em pending.');
+            }
+
+            // gerar PDF
+            $pdfName = "receipt_{$order->id}.pdf";
+            Pdf::loadView('emails.orders.receipt', compact('order'))
+                ->save(storage_path("app/public/receipts/{$pdfName}"));
+
+            // atualizar stock
+            foreach($order->items as $item) {
+                $prod = $item->product;
+                $prod->stock -= $item->quantity;
+                $prod->save();
+            }
+
+            // criar operação de envio do recibo (não mexe no cartão do cliente)
+            $order->update([
+                'status'      => 'completed',
+                'pdf_receipt' => $pdfName,
+            ]);
+
+            // avisar cliente por email
+            Mail::to($order->member->email)
+                ->send(new OrderReceiptMail($order));
+        });
+
+        return back()->with('success','Encomenda marcada como completada.');
+    }
+
+    // 3) Cancelar encomenda como staff
+    public function cancel(Request $request, $id)
+    {
+        $request->validate(['reason' => 'required|string|max:255']);
+
+        DB::transaction(function() use($id, $request) {
+            $order = Order::findOrFail($id);
+
+            if ($order->status !== 'pending') {
+                abort(400,'Só se podem cancelar encomendas pending.');
+            }
+
+            // reembolso ao cartão
+            Operation::create([
+                'card_id'        => $order->member_id,
+                'type'           => 'credit',
+                'value'          => $order->total,
+                'date'           => now()->toDateString(),
+                'credit_type'    => 'order_cancellation',
+                'order_id'       => $order->id,
+            ]);
+            $order->member->card->increment('balance', $order->total);
+
+            // atualizar estado
+            $order->update([
+                'status'        => 'canceled',
+                'cancel_reason' => $request->reason,
+            ]);
+        });
+
+        return back()->with('success','Encomenda cancelada pelo staff.');
+    }
+}

@@ -4,86 +4,107 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Setting;
 use App\Models\Card;
 use App\Models\Operation;
+use App\Models\User;
 use App\Services\Payment;
+use App\Mail\MembershipConfirmationMail;
 
 class MembershipFeeController extends Controller
 {
-    public function show()
+    public function __construct()
     {
-        $settings = Setting::first();
-        $fee = $settings ? $settings->membership_fee : 100;
-
-        return view('membership.show', compact('fee'));
+        $this->middleware('auth');
     }
 
+    /**
+     * Show membership fee payment form.
+     */
+    public function show()
+    {
+        $setting = Setting::first();
+        $fee = $setting ? $setting->membership_fee : 0;
+
+        return view('membership.pay', compact('fee'));
+    }
+
+    /**
+     * Process membership fee payment.
+     */
     public function pay(Request $request)
     {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        // Já é membro
-        if ($user->type === 'member') {
-            return redirect()->route('profile.edit')->with('success', 'Já és membro do clube.');
-        }
- 
-        // Apenas pending_member pode pagar
-        if ($user->type !== 'pending_member') {
-            return redirect()->route('profile.edit')->with('error', 'Não tens permissão para pagar a quota.');
-        }
-
-        // Validação do pagamento
+        // Validate payment type
         $request->validate([
             'payment_type' => 'required|in:Visa,PayPal,MBWAY',
-            'card_number' => 'required_if:payment_type,Visa|digits:16',
-            'cvc_code' => 'required_if:payment_type,Visa|digits:3',
-            'email_address' => 'required_if:payment_type,PayPal|email',
-            'phone_number' => 'required_if:payment_type,MBWAY|regex:/^9\d{8}$/',
         ]);
 
-        $reference = match ($request->payment_type) {
-            'Visa' => ['card_number' => $request->card_number, 'cvc_code' => $request->cvc_code],
-            'PayPal' => ['email_address' => $request->email_address],
-            'MBWAY' => ['phone_number' => $request->phone_number],
+        // Get fee
+        $fee = Setting::first()->membership_fee;
+
+        // Dynamic rules based on payment type
+        $rules = ['payment_type' => 'required|in:Visa,PayPal,MBWAY'];
+        if ($request->payment_type === 'Visa') {
+            $rules['card_number'] = 'required|digits:16';
+            $rules['cvc_code']    = 'required|digits:3';
+        } elseif ($request->payment_type === 'PayPal') {
+            $rules['email_address'] = 'required|email';
+        } else {
+            $rules['phone_number']  = ['required','regex:/^9\d{8}$/'];
+        }
+        $request->validate($rules);
+
+        // Simulate payment
+        $referenceData = match ($request->payment_type) {
+            'Visa'   => ['card_number'=>$request->card_number,'cvc_code'=>$request->cvc_code],
+            'PayPal' => ['email_address'=>$request->email_address],
+            'MBWAY'  => ['phone_number'=>$request->phone_number],
         };
 
-        if (!Payment::simulate($request->payment_type, $reference)) {
-            return back()->with('error', 'O pagamento falhou. Verifica os dados e tenta novamente.');
+        if (! Payment::simulate($request->payment_type, $referenceData)) {
+            return back()
+                ->with('error', 'Pagamento falhou. Verifica os dados.')
+                ->withInput();
         }
 
-        $card = $user->card;
-        if (!$card) {
-            return back()->with('error', 'Cartão virtual não encontrado.');
-        }
+        $user = Auth::user();
 
-        $fee = Setting::first()->membership_fee ?? 100;
+        DB::transaction(function () use ($user, $fee) {
+            /** @var User $user */
+            /** @var Card $card */
 
-        if ($card->balance < $fee) {
-            return back()->with('error', 'Saldo insuficiente no cartão virtual.');
-        }
+            // Create or retrieve card
+            $card = Card::firstOrCreate(
+                ['id' => $user->id],
+                ['card_number' => random_int(100000, 999999), 'balance' => 0]
+            );
 
-        // Debitar e registar operação
-        $card->balance -= $fee;
-        $card->save();
+            // Record debit operation
+            Operation::create([
+                'card_id'    => $card->id,
+                'type'       => 'debit',
+                'debit_type' => 'membership_fee',
+                'value'      => $fee,
+                'date'       => now()->toDateString(),
+            ]);
 
-        Operation::create([
-            'card_id' => $card->id,
-            'type' => 'debit',
-            'value' => $fee,
-            'date' => now()->toDateString(),
-            'debit_type' => 'membership_fee',
-            'payment_type' => $request->payment_type,
-            'payment_reference' => $request->payment_type === 'Visa' ? $request->card_number
-                : ($request->payment_type === 'PayPal' ? $request->email_address : $request->phone_number),
-        ]);
+            // Update card balance
+            $card->balance -= $fee;
+            $card->save();
 
-        // Atualizar tipo de utilizador
-        $user->type = 'member';
-        $user->save();
+            // Update user type
+            $user->type = 'member';
+            $user->save();
 
-        return redirect()->route('membership.confirmation');
+            // Send confirmation email
+            Mail::to($user->email)
+                ->send(new MembershipConfirmationMail($user));
+        });
+
+        return redirect()
+            ->route('membership.confirmation')
+            ->with('success', 'Quota paga com sucesso! Bem-vindo ao Grocery Club.');
     }
 }
