@@ -84,7 +84,7 @@ Route::middleware(['auth', 'can:manage-inventory'])->group(function () {
         ->name('supply_orders.complete');
 });
 
-// Inventário (apenas roles com permissão)
+// Inventário
 Route::middleware(['auth', 'can:manage-inventory'])->group(function () {
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('/inventory/low', [InventoryController::class, 'lowStock'])->name('inventory.low');
@@ -97,7 +97,7 @@ Route::middleware(['auth', 'can:manage-inventory'])->group(function () {
         ->name('inventory.adjust');
 });
 
-// Gestão de Categorias, Produtos, Portes e Utilizadores (apenas settings)
+// Gestão de Categorias, Produtos, Portes e Utilizadores
 Route::middleware(['auth', 'can:manage-settings'])
     ->prefix('settings')
     ->name('settings.')
@@ -121,7 +121,7 @@ Route::middleware(['auth', 'can:manage-settings'])
         Route::post('users/{user}/restore',  [UserController::class, 'restore'])->name('users.restore');
     });
 
-// Gestão interna de encomendas (EmployeeOrderController)
+// Gestão interna de encomendas
 Route::middleware(['auth', 'can:manage-orders'])->group(function () {
     Route::get('/admin/orders', [EmployeeOrderController::class, 'index'])
         ->name('admin.orders.index');

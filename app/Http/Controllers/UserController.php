@@ -28,7 +28,7 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success','Utilizador atualizado.');
     }
     public function destroy(User $user) {
-        $user->delete(); // soft delete
+        $user->delete();
         return back()->with('success','Membro cancelado.');
     }
     public function block(User $user) {

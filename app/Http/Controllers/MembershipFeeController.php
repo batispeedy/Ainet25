@@ -20,9 +20,6 @@ class MembershipFeeController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * Show membership fee payment form.
-     */
     public function show()
     {
         $setting = Setting::first();
@@ -31,20 +28,15 @@ class MembershipFeeController extends Controller
         return view('membership.pay', compact('fee'));
     }
 
-    /**
-     * Process membership fee payment.
-     */
     public function pay(Request $request)
     {
-        // Validate payment type
+
         $request->validate([
             'payment_type' => 'required|in:Visa,PayPal,MBWAY',
         ]);
 
-        // Get fee
         $fee = Setting::first()->membership_fee;
 
-        // Dynamic rules based on payment type
         $rules = ['payment_type' => 'required|in:Visa,PayPal,MBWAY'];
         if ($request->payment_type === 'Visa') {
             $rules['card_number'] = 'required|digits:16';
@@ -56,7 +48,6 @@ class MembershipFeeController extends Controller
         }
         $request->validate($rules);
 
-        // Simulate payment
         $referenceData = match ($request->payment_type) {
             'Visa'   => ['card_number'=>$request->card_number,'cvc_code'=>$request->cvc_code],
             'PayPal' => ['email_address'=>$request->email_address],
@@ -75,13 +66,11 @@ class MembershipFeeController extends Controller
             /** @var User $user */
             /** @var Card $card */
 
-            // Create or retrieve card
             $card = Card::firstOrCreate(
                 ['id' => $user->id],
                 ['card_number' => random_int(100000, 999999), 'balance' => 0]
             );
 
-            // Record debit operation
             Operation::create([
                 'card_id'    => $card->id,
                 'type'       => 'debit',
@@ -90,15 +79,12 @@ class MembershipFeeController extends Controller
                 'date'       => now()->toDateString(),
             ]);
 
-            // Update card balance
             $card->balance -= $fee;
             $card->save();
 
-            // Update user type
             $user->type = 'member';
             $user->save();
 
-            // Send confirmation email
             Mail::to($user->email)
                 ->send(new MembershipConfirmationMail($user));
         });

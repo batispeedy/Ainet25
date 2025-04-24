@@ -17,18 +17,12 @@ class InventoryController extends Controller
         $this->middleware('can:manage-inventory');
     }
 
-    /**
-     * Display all products and their stock levels.
-     */
     public function index()
     {
         $products = Product::orderBy('name')->paginate(15);
         return view('inventory.index', compact('products'));
     }
 
-    /**
-     * Display products below the lower stock limit.
-     */
     public function lowStock()
     {
         $products = Product::whereColumn('stock', '<', 'stock_lower_limit')
@@ -37,9 +31,6 @@ class InventoryController extends Controller
         return view('inventory.low', compact('products'));
     }
 
-    /**
-     * Display out-of-stock products.
-     */
     public function outOfStock()
     {
         $products = Product::where('stock', '<=', 0)
@@ -48,9 +39,6 @@ class InventoryController extends Controller
         return view('inventory.out', compact('products'));
     }
 
-    /**
-     * Create a supply order, manual or automatic up to stock_upper_limit.
-     */
     public function createSupplyOrder(Request $request)
     {
         $request->validate([
@@ -60,7 +48,6 @@ class InventoryController extends Controller
 
         $product = Product::findOrFail($request->product_id);
 
-        // Se o utilizador não especificou quantity, auto-calc até upper limit
         $quantity = $request->filled('quantity')
             ? (int) $request->quantity
             : max(0, $product->stock_upper_limit - $product->stock);
@@ -79,9 +66,6 @@ class InventoryController extends Controller
         return back()->with('success', "Supply order criada para “{$product->name}” (quantidade: {$quantity}).");
     }
 
-    /**
-     * Complete a supply order and update stock.
-     */
     public function completeSupplyOrder($id)
     {
         $order = SupplyOrder::findOrFail($id);
@@ -93,7 +77,6 @@ class InventoryController extends Controller
         DB::transaction(function () use ($order) {
             $order->update(['status' => 'completed']);
 
-            // Atualiza stock do produto
             Product::where('id', $order->product_id)
                 ->increment('stock', $order->quantity);
         });
@@ -101,9 +84,6 @@ class InventoryController extends Controller
         return back()->with('success', 'Supply order completada e stock atualizado.');
     }
 
-    /**
-     * Manually adjust stock for a product.
-     */
     public function adjustStock(Request $request, $id)
     {
         $product = Product::findOrFail($id);

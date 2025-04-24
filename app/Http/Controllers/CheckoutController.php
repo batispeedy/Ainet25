@@ -26,7 +26,6 @@ class CheckoutController extends Controller
     {
         $user = Auth::user();
 
-        // Apenas membros (member ou board) podem aceder
         if (! in_array($user->type, ['member', 'board'])) {
             return redirect()->route('membership.show')
                              ->with('error', 'Tens de pagar a quota para aceder ao checkout.');
@@ -55,7 +54,6 @@ class CheckoutController extends Controller
             'nif'           => 'required|digits:9',
             'address'       => 'required|string|max:255',
             'payment_type'  => 'required|in:Visa,PayPal,MBWAY',
-            // Aqui podias adicionar as validações específicas por método...
         ]);
 
         $user = Auth::user();
@@ -106,7 +104,6 @@ class CheckoutController extends Controller
                 'date'             => now()->toDateString(),
             ]);
 
-            // Itens + corrige stock
             foreach ($cart as $item) {
                 OrderItem::create([
                     'order_id'   => $order->id,
@@ -129,7 +126,6 @@ class CheckoutController extends Controller
             Mail::to($user->email)->send(new OrderReceiptMail($order));
         });
 
-        // Limpa carrinho e redireciona para o histórico
         session()->forget('cart');
 
         return redirect()->route('dashboard')

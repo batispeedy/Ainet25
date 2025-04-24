@@ -13,9 +13,6 @@ class ProductController extends Controller
         $this->middleware(['auth', 'can:manage-settings']);
     }
 
-    /**
-     * Exibe lista de produtos com filtros e paginação.
-     */
     public function index(Request $request)
     {
         $query = Product::with('category');
@@ -33,18 +30,12 @@ class ProductController extends Controller
         return view('products.index', compact('products', 'categories'));
     }
 
-    /**
-     * Formulário de criação de novo produto.
-     */
     public function create()
     {
         $categories = Category::orderBy('name')->get();
         return view('products.create', compact('categories'));
     }
 
-    /**
-     * Persiste novo produto.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -76,18 +67,12 @@ class ProductController extends Controller
                          ->with('success', 'Produto criado com sucesso.');
     }
 
-    /**
-     * Formulário de edição.
-     */
     public function edit(Product $product)
     {
         $categories = Category::orderBy('name')->get();
         return view('products.edit', compact('product', 'categories'));
     }
 
-    /**
-     * Atualiza dados do produto.
-     */
     public function update(Request $request, Product $product)
     {
         $request->validate([
@@ -119,9 +104,6 @@ class ProductController extends Controller
                          ->with('success', 'Produto atualizado com sucesso.');
     }
 
-    /**
-     * Soft delete do produto.
-     */
     public function destroy(Product $product)
     {
         $product->delete();

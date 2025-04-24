@@ -28,41 +28,26 @@ class Order extends Model
         'total' => 'float',
     ];
 
-    /**
-     * The member (user) who placed the order.
-     */
     public function member(): BelongsTo
     {
         return $this->belongsTo(User::class, 'member_id');
     }
 
-    /**
-     * The items associated with this order.
-     */
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    /**
-     * Get the formatted total amount.
-     */
     public function getFormattedTotalAttribute(): string
     {
         return number_format($this->total, 2, ',', '.') . ' €';
     }
 
-    /**
-     * Get the formatted shipping cost.
-     */
     public function getFormattedShippingCostAttribute(): string
     {
         return number_format($this->shipping_costs, 2, ',', '.') . ' €';
     }
 
-    /**
-     * Get the formatted subtotal (total_items).
-     */
     public function getFormattedSubtotalAttribute(): string
     {
         return number_format($this->total_items, 2, ',', '.') . ' €';

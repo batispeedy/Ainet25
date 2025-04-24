@@ -18,7 +18,6 @@ class AuthServiceProvider extends ServiceProvider
             return $user->type === 'board';
         });
 
-        // se quiseres mais Gates:
         Gate::define('manage-inventory', function (User $u) {
             return in_array($u->type, ['board','employee']);
         });

@@ -14,21 +14,16 @@ class StatsController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * Dashboard de estatísticas (só para board members)
-     */
     public function index()
     {
         $this->authorize('manage-settings');
 
-        // 1) Vendas por Mês (SQLite usa strftime)
         $salesByMonth = DB::table('orders')
             ->selectRaw("strftime('%Y-%m', date) as month, SUM(total) as total")
             ->groupBy('month')
             ->orderBy('month')
             ->pluck('total', 'month');
 
-        // 2) Vendas por Categoria
         $salesByCategory = DB::table('items_orders')
             ->join('orders', 'items_orders.order_id', '=', 'orders.id')
             ->join('products', 'items_orders.product_id', '=', 'products.id')
@@ -38,7 +33,6 @@ class StatsController extends Controller
             ->orderByDesc('total')
             ->pluck('total', 'category');
 
-        // 3) Vendas por Produto
         $salesByProduct = DB::table('items_orders')
             ->join('products', 'items_orders.product_id', '=', 'products.id')
             ->selectRaw('products.name as product, SUM(items_orders.subtotal) as total')
@@ -46,7 +40,6 @@ class StatsController extends Controller
             ->orderByDesc('total')
             ->pluck('total', 'product');
 
-        // 4) Vendas por Membro
         $salesByMember = DB::table('orders')
             ->join('users', 'orders.member_id', '=', 'users.id')
             ->selectRaw('users.name as member, SUM(orders.total) as total')
@@ -62,14 +55,11 @@ class StatsController extends Controller
         ));
     }
 
-    /**
-     * Estatísticas pessoais (para membros)
-     */
     public function personal()
     {
         $userId = Auth::id();
 
-        // Vendas por mês do próprio
+
         $salesByMonth = DB::table('orders')
             ->selectRaw("strftime('%Y-%m', date) as month, SUM(total) as total")
             ->where('member_id', $userId)
@@ -77,7 +67,7 @@ class StatsController extends Controller
             ->orderBy('month')
             ->pluck('total', 'month');
 
-        // Vendas por categoria do próprio
+
         $salesByCategory = DB::table('items_orders')
             ->join('orders', 'items_orders.order_id', '=', 'orders.id')
             ->join('products', 'items_orders.product_id', '=', 'products.id')

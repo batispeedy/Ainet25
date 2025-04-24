@@ -27,7 +27,7 @@
     </div>
     @endif
 
-    <!-- Tabs -->
+
     <div class="mb-6">
         <ul class="flex border-b" id="tabs">
             <li class="mr-1"><a href="#" data-tab="dados" class="tab-link inline-block py-2 px-4 font-semibold text-gray-700 hover:text-black border-l border-t border-r rounded-t">Dados Pessoais</a></li>
@@ -39,7 +39,6 @@
         </ul>
     </div>
 
-    <!-- Dados Pessoais -->
     <div id="dados" class="tab-content mb-12 hidden">
         <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
             @csrf
@@ -102,7 +101,6 @@
         </form>
     </div>
 
-    <!-- Alterar Palavra-passe -->
     <div id="senha" class="tab-content mb-12 hidden">
         <form method="POST" action="{{ route('profile.updatePassword') }}">
             @csrf
@@ -123,7 +121,6 @@
         </form>
     </div>
 
-    <!-- Cartão Virtual -->
     <div id="cartao" class="tab-content mb-12 hidden">
         <h2 class="text-xl font-semibold mb-3 text-gray-800">Cartão Virtual</h2>
 
@@ -134,7 +131,6 @@
             <p><strong>Saldo:</strong> {{ number_format($card->balance, 2, ',', '.') }} €</p>
         </div>
 
-        <!-- Formulário de Top-up -->
         <form method="POST" action="{{ route('profile.topup') }}" class="bg-yellow-50 p-4 rounded shadow space-y-4">
             @csrf
 
@@ -178,7 +174,7 @@
         @endif
     </div>
 
-    <!-- Transações -->
+
     <div id="transacoes" class="tab-content mb-12 hidden">
         <h2 class="text-xl font-semibold mb-3 text-gray-800">Histórico de Transações</h2>
         @if($transactions->isEmpty())
@@ -194,7 +190,7 @@
         @endif
     </div>
 
-    <!-- Encomendas -->
+
     <div id="encomendas" class="tab-content mb-12 hidden">
         <h2 class="text-xl font-semibold mb-3 text-gray-800">Histórico de Encomendas</h2>
 

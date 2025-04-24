@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class EnsureUserIsBoard
 {
-    /**
-     * Handle an incoming request.
-     */
     public function handle(Request $request, Closure $next): Response
     {
         $user = Auth::user();

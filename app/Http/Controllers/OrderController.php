@@ -16,9 +16,6 @@ class OrderController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * Lista as encomendas do utilizador autenticado.
-     */
     public function index()
     {
         $user   = Auth::user();
@@ -29,14 +26,11 @@ class OrderController extends Controller
         return view('orders.index', compact('orders'));
     }
 
-    /**
-     * Mostra detalhes de uma encomenda.
-     */
     public function show(Order $order)
     {
         $user = Auth::user();
 
-        // Só permite ver se for mesmo do utilizador
+
         if ($order->member_id !== $user->id) {
             abort(403, 'Não autorizado.');
         }
@@ -44,28 +38,25 @@ class OrderController extends Controller
         return view('orders.show', compact('order'));
     }
 
-    /**
-     * Cancela uma encomenda pendente e faz o reembolso.
-     */
     public function cancel(Order $order)
     {
         $user = Auth::user();
 
-        // Só o dono da encomenda pode cancelar
+
         if ($order->member_id !== $user->id) {
             abort(403, 'Não autorizado a cancelar esta encomenda.');
         }
 
-        // Só encomendas pendentes
+
         if ($order->status !== 'pending') {
             return redirect()
                 ->route('orders.index')
                 ->with('error', 'Só podes cancelar encomendas pendentes.');
         }
 
-        // Transação atómica para status + reembolso
+
         DB::transaction(function () use ($order) {
-            // 1) Reembolso no cartão
+
             $card = Card::find($order->member_id);
             Operation::create([
                 'card_id'        => $card->id,
@@ -78,7 +69,6 @@ class OrderController extends Controller
             $card->balance += $order->total;
             $card->save();
 
-            // 2) Atualiza o estado da encomenda
             $order->status        = 'canceled';
             $order->cancel_reason = 'Cancelado pelo utilizador';
             $order->save();

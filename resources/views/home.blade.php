@@ -9,7 +9,6 @@
     <style>
         body {
             background-image: url('https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=1950&q=80');
-            /* Cesta com frutas */
             background-size: cover;
             background-position: center;
             font-family: 'Georgia', serif;
@@ -32,10 +31,10 @@
 
 <body class="relative h-screen overflow-hidden text-white">
 
-    <!-- Overlay rústico -->
+   
     <div class="absolute inset-0 overlay z-10"></div>
 
-    <!-- Conteúdo central -->
+   
     <div class="relative z-20 flex items-center justify-center h-full">
         <div class="text-center px-6">
             <h1 class="text-5xl md:text-6xl font-bold mb-6">Grocery Club</h1>

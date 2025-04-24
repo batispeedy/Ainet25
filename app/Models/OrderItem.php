@@ -6,10 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderItem extends Model
 {
-    // Diz ao Eloquent para usar a tabela pivot correta
     protected $table = 'items_orders';
 
-    // Desliga o gerenciamento automático de created_at / updated_at
     public $timestamps = false;
 
     protected $fillable = [

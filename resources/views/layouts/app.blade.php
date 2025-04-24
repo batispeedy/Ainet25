@@ -11,13 +11,13 @@
     .navbar a { color: #fff; }
     .navbar a:hover { color: #f3f3f3; text-decoration: underline; }
     .username { color: #fff; font-weight: bold; }
-    /* força texto preto dentro do dropdown */
+    
     #settings-menu a { color: #000 !important; }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
-  <!-- NAVBAR -->
+
   <nav class="navbar shadow px-6 py-4 flex justify-between items-center relative">
     <a href="{{ route('home') }}" class="text-2xl font-bold">Grocery Club</a>
 
@@ -29,7 +29,7 @@
         <a href="{{ route('dashboard') }}">Dashboard</a>
 
         @can('manage-settings')
-          <!-- dropdown de configurações -->
+         
           <div class="relative inline-block">
             <button id="settings-toggle"
                     class="text-white bg-yellow-800 px-3 py-2 rounded hover:bg-yellow-700 transition">
@@ -47,14 +47,14 @@
         @endcan
 
         @can('manage-orders')
-          <!-- link para gestão interna de encomendas -->
+        
           <a href="{{ route('admin.orders.index') }}">🛠️ Gestão de Encomendas</a>
         @endcan
 
         @can('manage-inventory')
-          <!-- link para inventário -->
+         
           <a href="{{ route('inventory.index') }}">📦 Inventário</a>
-          <!-- link para ordens de reposição -->
+        
           <a href="{{ route('supply_orders.index') }}">🔄 Ordens de Reposição</a>
         @endcan
 
@@ -78,7 +78,6 @@
     </div>
   </nav>
 
-  <!-- CONTEÚDO PRINCIPAL -->
   <main class="flex-grow px-6 py-8">
     @yield('content')
   </main>

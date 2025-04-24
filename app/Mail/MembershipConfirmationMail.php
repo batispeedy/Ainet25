@@ -14,17 +14,11 @@ class MembershipConfirmationMail extends Mailable
     /** @var User */
     public $user;
 
-    /**
-     * Construtor recebe o utilizador que acabou de pagar.
-     */
     public function __construct(User $user)
     {
         $this->user = $user;
     }
 
-    /**
-     * Build the message.
-     */
     public function build()
     {
         return $this

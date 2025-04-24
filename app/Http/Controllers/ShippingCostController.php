@@ -12,20 +12,20 @@ class ShippingCostController extends Controller
         $this->middleware(['auth','can:manage-settings']);
     }
 
-    // Lista todas as faixas
+
     public function index()
     {
         $costs = SettingShippingCost::orderBy('min_value_threshold')->paginate(15);
         return view('shipping_costs.index', compact('costs'));
     }
 
-    // Form para nova faixa
+
     public function create()
     {
         return view('shipping_costs.create');
     }
 
-    // Guarda nova faixa
+
     public function store(Request $request)
     {
         $request->validate([
@@ -42,13 +42,13 @@ class ShippingCostController extends Controller
                          ->with('success','Faixa de portes criada.');
     }
 
-    // Form de edição
+
     public function edit(SettingShippingCost $shipping_cost)
     {
         return view('shipping_costs.edit', compact('shipping_cost'));
     }
 
-    // Atualiza faixa
+
     public function update(Request $request, SettingShippingCost $shipping_cost)
     {
         $request->validate([
@@ -65,7 +65,6 @@ class ShippingCostController extends Controller
                          ->with('success','Faixa de portes atualizada.');
     }
 
-    // Remove faixa
     public function destroy(SettingShippingCost $shipping_cost)
     {
         $shipping_cost->delete();

@@ -28,12 +28,12 @@
 
 <div class="overlay p-8 max-w-7xl mx-auto rounded">
 
-    <!-- Cabeçalho -->
+
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-4xl font-bold text-gray-800">Loja Gourmet</h1>
     </div>
 
-    <!-- Categorias com imagem e scroll horizontal -->
+   
     <div class="overflow-x-auto mb-8">
         <div class="flex gap-4">
             @foreach($categories as $category)
@@ -55,7 +55,7 @@
         </div>
     </div>
 
-    <!-- Filtros -->
+
     <form method="GET" class="mb-6 bg-white p-4 rounded shadow flex flex-col md:flex-row gap-4 items-center">
         <select name="category" class="border rounded p-2 w-full md:w-auto">
             <option value="">Todas as Categorias</option>
@@ -78,7 +78,7 @@
         </button>
     </form>
 
-    <!-- Produtos -->
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         @foreach($products as $product)
             <div class="bg-white rounded shadow p-4">

@@ -14,9 +14,6 @@ class CardController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * Mostra detalhes do cartão e saldo.
-     */
     public function show()
     {
         $user = Auth::user();
@@ -24,9 +21,6 @@ class CardController extends Controller
         return view('card.show', compact('card'));
     }
 
-    /**
-     * Histórico de operações.
-     */
     public function history()
     {
         $user = Auth::user();
