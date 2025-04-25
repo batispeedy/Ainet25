@@ -28,18 +28,16 @@
 
 <div class="overlay p-8 max-w-7xl mx-auto rounded">
 
-
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-4xl font-bold text-gray-800">Loja Gourmet</h1>
     </div>
 
-   
     <div class="overflow-x-auto mb-8">
         <div class="flex gap-4">
             @foreach($categories as $category)
                 <a href="{{ route('store.index', ['category' => $category->id]) }}" class="text-center group min-w-[120px]">
                     <div class="bg-white rounded shadow hover:shadow-lg transition overflow-hidden w-32">
-                        @if ($category->image && file_exists(public_path('storage/categories/' . $category->image)))
+                        @if ($category->image && file_exists(storage_path('app/public/categories/' . $category->image)))
                             <img src="{{ asset('storage/categories/' . $category->image) }}" alt="{{ $category->name }}"
                                 class="w-full h-24 object-cover">
                         @else
@@ -54,7 +52,6 @@
             @endforeach
         </div>
     </div>
-
 
     <form method="GET" class="mb-6 bg-white p-4 rounded shadow flex flex-col md:flex-row gap-4 items-center">
         <select name="category" class="border rounded p-2 w-full md:w-auto">
@@ -78,11 +75,10 @@
         </button>
     </form>
 
-
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         @foreach($products as $product)
             <div class="bg-white rounded shadow p-4">
-                @if ($product->photo && file_exists(public_path('storage/products/' . $product->photo)))
+                @if ($product->photo && file_exists(storage_path('app/public/products/' . $product->photo)))
                     <img src="{{ asset('storage/products/' . $product->photo) }}" alt="{{ $product->name }}"
                         class="mb-4 w-full h-48 object-cover rounded">
                 @else
@@ -93,7 +89,7 @@
                 <h2 class="text-xl font-semibold text-gray-900">{{ $product->name }}</h2>
                 <p class="text-gray-600 mb-2">{{ $product->description }}</p>
 
-                {{-- **Aqui fica a secção de desconto** --}}
+                {{-- Desconto --}}
                 @if ($product->discount && $product->discount_min_qty)
                     <p class="text-sm text-red-700 font-medium">
                         Desconto de {{ number_format($product->discount,2,',','.') }} € a partir de {{ $product->discount_min_qty }} unidades
@@ -124,5 +120,12 @@
             </div>
         @endforeach
     </div>
+
+    @if ($products->hasPages())
+        <div class="mt-8 flex justify-center">
+            {{ $products->links() }}
+        </div>
+    @endif
+
 </div>
 @endsection

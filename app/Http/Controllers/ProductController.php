@@ -63,7 +63,7 @@ class ProductController extends Controller
         }
 
         Product::create($data);
-        return redirect()->route('products.index')
+        return redirect()->route('settings.products.index')
                          ->with('success', 'Produto criado com sucesso.');
     }
 
@@ -100,14 +100,14 @@ class ProductController extends Controller
         }
 
         $product->update($data);
-        return redirect()->route('products.index')
+        return redirect()->route('settings.products.index')
                          ->with('success', 'Produto atualizado com sucesso.');
     }
 
     public function destroy(Product $product)
     {
         $product->delete();
-        return redirect()->route('products.index')
+        return redirect()->route('settings.products.index')
                          ->with('success', 'Produto removido.');
     }
 }

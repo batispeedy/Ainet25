@@ -39,7 +39,7 @@
                                        min="1"
                                        class="w-16 border rounded px-2 py-1 text-gray-800">
                                 <button type="submit"
-                                        class="btn-rustic px-3 py-1 text-white rounded">
+                                        class="btn-rustic px-3 py-1 text-black rounded">
                                     Atualizar
                                 </button>
                             </form>

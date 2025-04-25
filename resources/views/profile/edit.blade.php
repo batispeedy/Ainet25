@@ -60,19 +60,16 @@
             </div>
 
             @php
-            use Illuminate\Support\Facades\Storage;
+            $user = auth()->user();
+            $photo = $user->photo ?: 'anonymous.png';
             @endphp
 
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Foto de Perfil</label>
                 <img
-                    src="{{
-            auth()->user()->photo
-                ? Storage::url('users/' . auth()->user()->photo)
-                : Storage::url('users/anonymous.png')
-        }}"
-                    alt="Foto de {{ auth()->user()->name }}"
-                    class="w-24 h-24 rounded-full mb-3">
+                    src="{{ asset('storage/users/' . $photo) }}"
+                    alt="Foto de {{ $user->name }}"
+                    class="w-24 h-24 rounded-full mb-3 object-cover">
                 <input
                     type="file"
                     name="photo"
@@ -238,10 +235,10 @@
     <div id="estatisticas" class="tab-content mb-12 hidden">
         <h2 class="text-xl font-semibold mb-3">Minhas Estatísticas</h2>
         @php
-            use App\Models\Order;
-            $total = Order::where('member_id',auth()->id())->sum('total');
-            $count = Order::where('member_id',auth()->id())->count();
-            $avg = $count ? $total/$count : 0;
+        use App\Models\Order;
+        $total = Order::where('member_id',auth()->id())->sum('total');
+        $count = Order::where('member_id',auth()->id())->count();
+        $avg = $count ? $total/$count : 0;
         @endphp
         <p><strong>Total Gasto:</strong> {{ number_format($total,2,',','.') }} €</p>
         <p><strong>Encomendas:</strong> {{ $count }}</p>

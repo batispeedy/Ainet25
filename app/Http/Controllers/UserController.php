@@ -10,7 +10,7 @@ class UserController extends Controller
 {
     public function index()
 {
-    $users = User::withTrashed()->get(); 
+    $users = User::paginate(10);
     return view('users.index', compact('users'));
 }
 
@@ -25,7 +25,7 @@ class UserController extends Controller
             'blocked'=>'boolean'
         ]);
         $user->update($req->only('name','email','type','blocked'));
-        return redirect()->route('users.index')->with('success','Utilizador atualizado.');
+        return redirect()->route('settings.users.index')->with('success','Utilizador atualizado.');
     }
     public function destroy(User $user) {
         $user->delete();
@@ -47,4 +47,5 @@ class UserController extends Controller
         $user->type = 'member'; $user->save();
         return back()->with('success','Revogado privilégio de board.');
     }
+    
 }

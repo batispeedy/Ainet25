@@ -11,7 +11,7 @@ class CategoryController extends Controller
     
     public function index()
     {
-        $categories = Category::withTrashed()->paginate(10);
+        $categories = Category::paginate(10);
         return view('categories.index', compact('categories'));
     }
 
@@ -32,7 +32,7 @@ class CategoryController extends Controller
         }
 
         Category::create($data);
-        return redirect()->route('categories.index')
+        return redirect()->route('settings.categories.index')
                          ->with('success', 'Categoria criada com sucesso.');
     }
 
@@ -56,14 +56,14 @@ class CategoryController extends Controller
         }
 
         $category->update($data);
-        return redirect()->route('categories.index')
+        return redirect()->route('settings.categories.index')
                          ->with('success', 'Categoria atualizada com sucesso.');
     }
 
     public function destroy(Category $category)
     {
         $category->delete();
-        return redirect()->route('categories.index')
+        return redirect()->route('settings.categories.index')
                          ->with('success', 'Categoria removida com sucesso.');
     }
 
@@ -71,7 +71,7 @@ class CategoryController extends Controller
     {
         $category = Category::withTrashed()->findOrFail($id);
         $category->restore();
-        return redirect()->route('categories.index')
+        return redirect()->route('settings.categories.index')
                          ->with('success', 'Categoria restaurada com sucesso.');
     }
 }

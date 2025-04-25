@@ -49,12 +49,10 @@ class ProfileController extends Controller
         $user->default_delivery_address = $request->default_delivery_address;
 
         if ($request->hasFile('photo')) {
-            $filename = 'user_'.$user->id.'.'.$request->photo->extension();
-            $request->photo->storeAs('public/users', $filename);
-            $user->photo = $filename;
+            $path = $request->photo->store('users', 'public');
+            $user->photo = basename($path);
         }
 
-        /** @var User $user */
         $user->save();
 
         return back()->with('success', 'Perfil atualizado com sucesso.');
@@ -108,7 +106,7 @@ class ProfileController extends Controller
                 $rules['email_address'] = 'required|email';
                 break;
             case 'MBWAY':
-                $rules['phone_number']  = ['required','regex:/^9\\d{8}$/'];
+                $rules['phone_number']  = ['required', 'regex:/^9\\d{8}$/'];
                 break;
         }
 
@@ -122,9 +120,9 @@ class ProfileController extends Controller
         }
 
         $reference = match ($request->payment_type) {
-            'Visa'   => ['card_number'=>$request->card_number,'cvc_code'=>$request->cvc_code],
-            'PayPal' => ['email_address'=>$request->email_address],
-            'MBWAY'  => ['phone_number'=>$request->phone_number],
+            'Visa'   => ['card_number' => $request->card_number, 'cvc_code' => $request->cvc_code],
+            'PayPal' => ['email_address' => $request->email_address],
+            'MBWAY'  => ['phone_number' => $request->phone_number],
         };
 
         if (! Payment::simulate($request->payment_type, $reference)) {
@@ -138,7 +136,7 @@ class ProfileController extends Controller
         $card = Card::find($user->id);
         if (! $card) {
             return back()->with('error', 'Cartão não encontrado.')
-                         ->with('active_tab','cartao');
+                ->with('active_tab', 'cartao');
         }
 
         $card->balance += $request->value;
@@ -151,7 +149,7 @@ class ProfileController extends Controller
             'date'             => Carbon::now()->toDateString(),
             'credit_type'      => 'payment',
             'payment_type'     => $request->payment_type,
-            'payment_reference'=> $this->extractReference($request),
+            'payment_reference' => $this->extractReference($request),
         ]);
 
         return redirect()->route('profile.edit')
