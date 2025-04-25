@@ -117,5 +117,8 @@
     @endcan
   @endauth
 
+  {{-- Yield scripts section for pages --}}
+  @yield('scripts')
+
 </body>
 </html>

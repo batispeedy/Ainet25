@@ -18,8 +18,9 @@ class StatsController extends Controller
     {
         $this->authorize('manage-settings');
 
+        // Vendas por mês (MySQL)
         $salesByMonth = DB::table('orders')
-            ->selectRaw("strftime('%Y-%m', date) as month, SUM(total) as total")
+            ->selectRaw("DATE_FORMAT(`date`, '%Y-%m') as month, SUM(`total`) as total")
             ->groupBy('month')
             ->orderBy('month')
             ->pluck('total', 'month');
@@ -59,14 +60,13 @@ class StatsController extends Controller
     {
         $userId = Auth::id();
 
-
+        // Suas próprias vendas por mês (MySQL)
         $salesByMonth = DB::table('orders')
-            ->selectRaw("strftime('%Y-%m', date) as month, SUM(total) as total")
+            ->selectRaw("DATE_FORMAT(`date`, '%Y-%m') as month, SUM(`total`) as total")
             ->where('member_id', $userId)
             ->groupBy('month')
             ->orderBy('month')
             ->pluck('total', 'month');
-
 
         $salesByCategory = DB::table('items_orders')
             ->join('orders', 'items_orders.order_id', '=', 'orders.id')

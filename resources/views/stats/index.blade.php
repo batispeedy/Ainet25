@@ -3,120 +3,101 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto space-y-8">
-    <h1 class="text-3xl font-extrabold text-gray-800">Estatísticas Gerais</h1>
+    <h1 class="text-3xl font-extrabold text-gray-800">Dashboard de Estatísticas</h1>
 
-    {{-- Grid: Vendas por Mês & Vendas por Categoria --}}
+    {{-- Gráficos --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {{-- Vendas por Mês --}}
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-xl font-semibold mb-4">Vendas por Mês</h2>
-            @if($salesByMonth->isEmpty())
-                <p class="text-gray-500">Sem vendas registadas.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-4 py-2 text-left">Mês</th>
-                                <th class="px-4 py-2 text-right">Total (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($salesByMonth as $month => $total)
-                            <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-gray-100">
-                                <td class="px-4 py-2">{{ $month }}</td>
-                                <td class="px-4 py-2 text-right">{{ number_format($total, 2, ',', '.') }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+            <div class="relative h-64">
+                <canvas id="salesByMonthChart"></canvas>
+            </div>
         </div>
-
-        {{-- Vendas por Categoria --}}
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-xl font-semibold mb-4">Vendas por Categoria</h2>
-            @if($salesByCategory->isEmpty())
-                <p class="text-gray-500">Sem vendas por categoria.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-4 py-2 text-left">Categoria</th>
-                                <th class="px-4 py-2 text-right">Total (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($salesByCategory as $category => $total)
-                            <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-gray-100">
-                                <td class="px-4 py-2">{{ $category }}</td>
-                                <td class="px-4 py-2 text-right">{{ number_format($total, 2, ',', '.') }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+            <div class="relative h-64">
+                <canvas id="salesByCategoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Vendas por Produto</h2>
+            <div class="relative h-64">
+                <canvas id="salesByProductChart"></canvas>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Vendas por Membro</h2>
+            <div class="relative h-64">
+                <canvas id="salesByMemberChart"></canvas>
+            </div>
         </div>
     </div>
 
-    {{-- Grid: Vendas por Produto & Vendas por Membro --}}
+    {{-- Top 10 --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {{-- Vendas por Produto --}}
+        {{-- Top 10 Membros --}}
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Vendas por Produto</h2>
-            @if($salesByProduct->isEmpty())
-                <p class="text-gray-500">Sem vendas por produto.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-4 py-2 text-left">Produto</th>
-                                <th class="px-4 py-2 text-right">Total (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($salesByProduct as $product => $total)
-                            <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-gray-100">
-                                <td class="px-4 py-2">{{ $product }}</td>
-                                <td class="px-4 py-2 text-right">{{ number_format($total, 2, ',', '.') }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+            <h2 class="text-xl font-semibold mb-4">Top 10 Membros</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Membro</th>
+                            <th class="px-4 py-2 text-right">Total (€)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($salesByMember->take(10) as $member => $total)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2">{{ $member }}</td>
+                            <td class="px-4 py-2 text-right">{{ number_format($total,2,',','.') }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        {{-- Vendas por Membro --}}
+        {{-- Top 10 Artigos --}}
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Vendas por Membro</h2>
-            @if($salesByMember->isEmpty())
-                <p class="text-gray-500">Sem vendas por membro.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-4 py-2 text-left">Membro</th>
-                                <th class="px-4 py-2 text-right">Total (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($salesByMember as $member => $total)
-                            <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-gray-100">
-                                <td class="px-4 py-2">{{ $member }}</td>
-                                <td class="px-4 py-2 text-right">{{ number_format($total, 2, ',', '.') }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+            <h2 class="text-xl font-semibold mb-4">Top 10 Artigos</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Produto</th>
+                            <th class="px-4 py-2 text-right">Total (€)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($salesByProduct->take(10) as $product => $total)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2">{{ $product }}</td>
+                            <td class="px-4 py-2 text-right">{{ number_format($total,2,',','.') }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+@endsection
+
+{{-- Scripts para Chart.js --}}
+@section('scripts')
+  {{-- Dados em JSON para o script externo --}}
+  <script type="application/json" id="stats-data">
+    {!! json_encode([
+      'salesByMonth'    => $salesByMonth,
+      'salesByCategory' => $salesByCategory,
+      'salesByProduct'  => $salesByProduct,
+      'salesByMember'   => $salesByMember
+    ]) !!}
+  </script>
+
+  {{-- Lógica externa de gráficos --}}
+  <script src="{{ asset('js/stats-dashboard.js') }}" defer></script>
 @endsection
